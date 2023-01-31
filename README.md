@@ -1,2 +1,2 @@
-# typescript-math-parser
-A math formula parser written in TypeScript. To experiment with data functional programming and data structures.
+# typescript-math-evaluator
+A math formula evaluator written in TypeScript. To experiment with data functional programming and data structures.
