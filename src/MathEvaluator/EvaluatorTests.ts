@@ -1,17 +1,8 @@
-import {
-  evaluateExpression,
-  evaluate,
-  Expression,
-  TermType,
-  TermHelpers,
-} from './Evaluator';
+import { evaluateExpression, evaluate, Expression, Term } from './Evaluator';
 import tokenizer from './Tokenizer';
 import parseTokensToTerms from './TokensParser';
 
-function assertEvaluateExpressionEqual(
-  expression: Expression,
-  expected: TermType
-) {
+function assertEvaluateExpressionEqual(expression: Expression, expected: Term) {
   const actual = evaluateExpression(expression);
   if (actual.token !== expected.token) {
     console.warn('EXPECTED: ' + expected.token + ' ACTUAL: ' + actual.token);
@@ -40,13 +31,13 @@ export function runEvaluatorTests() {
     // POSTFIX:   4 2 + 3 *       = 18
     assertEvaluateExpressionEqual(
       [
-        TermHelpers.NumberTerm(4),
-        TermHelpers.NumberTerm(2),
-        TermHelpers.BinaryOperator('+', (x, y) => x + y),
-        TermHelpers.NumberTerm(3),
-        TermHelpers.BinaryOperator('*', (x, y) => x * y),
+        Term.MakeNumber(4),
+        Term.MakeNumber(2),
+        Term.MakeBinaryOperator('+', (x, y) => x + y),
+        Term.MakeNumber(3),
+        Term.MakeBinaryOperator('*', (x, y) => x * y),
       ],
-      TermHelpers.NumberTerm(18)
+      Term.MakeNumber(18)
     );
 
     assertParserEqual('4 + 2 * 3', '4 2 3 * +');

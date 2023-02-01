@@ -16,10 +16,10 @@
   4 + 2 * 3  ==> (4 (2 3 *) +) ==> 4 2 3 * +
 */
 
-import { TermType, TermHelpers } from './Evaluator';
+import { Term } from './Evaluator';
 
-export default function parseTokensToTerms(tokens: string[]): TermType[] {
-  let result: TermType[] = [];
+export default function parseTokensToTerms(tokens: string[]): Term[] {
+  let result: Term[] = [];
   let opStack: string[] = [];
 
   for (const token of tokens) {
@@ -50,7 +50,7 @@ export default function parseTokensToTerms(tokens: string[]): TermType[] {
 }
 
 // Move all terms AFTER the last '(' parenthesis from opStack to result stack.
-function moveFromOpStack(result: TermType[], opStack: string[]) {
+function moveFromOpStack(result: Term[], opStack: string[]) {
   const parensIdx = opStack.lastIndexOf('(');
 
   const afterParens = opStack.slice(parensIdx + 1);
@@ -66,20 +66,20 @@ function moveFromOpStack(result: TermType[], opStack: string[]) {
   opStack.push(...beforeParens);
 }
 
-function toTerm(token: string): TermType {
+function toTerm(token: string): Term {
   if (token === '+') {
-    return TermHelpers.BinaryOperator(token, (a, b) => a + b);
+    return Term.MakeBinaryOperator(token, (a, b) => a + b);
   } else if (token === '-') {
-    return TermHelpers.BinaryOperator(token, (a, b) => a - b);
+    return Term.MakeBinaryOperator(token, (a, b) => a - b);
   } else if (token === '*') {
-    return TermHelpers.BinaryOperator(token, (a, b) => a * b);
+    return Term.MakeBinaryOperator(token, (a, b) => a * b);
   } else if (token === '/') {
-    return TermHelpers.BinaryOperator(token, (a, b) => a / b);
+    return Term.MakeBinaryOperator(token, (a, b) => a / b);
   }
 
   const maybeInt = parseInt(token);
   if (!Number.isNaN(maybeInt)) {
-    return TermHelpers.NumberTerm(maybeInt);
+    return Term.MakeNumber(maybeInt);
   }
 
   throw new Error('Unable to parse string token to Term. Token: ' + token);

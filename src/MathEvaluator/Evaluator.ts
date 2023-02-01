@@ -19,45 +19,77 @@ POSTFIX is also called "Reverse Polish Notation (RPN)"
 // evaluate('sqrt(2)'); // '1.41'
 */
 
-type NumberTerm = { tag: 'number'; value: number; token: string };
-
 type OperatorToken = '+' | '-' | '*' | '/';
-
-export type TermType =
-  | NumberTerm
+type BinaryFn = (a: number, b: number) => number;
+type TermType =
+  | { tag: 'number'; value: number }
   | {
       tag: 'binaryFunction';
       token: OperatorToken;
-      fn: (a: number, b: number) => number;
+      fn: BinaryFn;
     }
-  | { tag: 'unaryFunction'; token: string; fn: (a: number) => number };
+  | {
+      tag: 'unaryFunction';
+      token: string;
+      fn: (a: number) => number;
+    };
 
-export const TermHelpers = {
-  NumberTerm(value: number): TermType {
-    return { tag: 'number', value, token: value.toString() };
-  },
-  BinaryOperator(
+export class Term {
+  private constructor(private readonly data: TermType) {}
+
+  static MakeNumber(value: number): Term {
+    return new Term({ tag: 'number', value });
+  }
+
+  static MakeBinaryOperator(
     token: OperatorToken,
     fn: (a: number, b: number) => number
-  ): TermType {
-    return { tag: 'binaryFunction', token, fn };
-  },
-  GetNumber(term: TermType): number {
-    if (term.tag !== 'number') {
-      throw new Error('Should have been a number but found: ' + term.tag);
-    }
-    return term.value;
-  },
-};
+  ): Term {
+    return new Term({ tag: 'binaryFunction', token: token, fn });
+  }
 
-export type Expression = TermType[];
+  get tag() {
+    return this.data.tag;
+  }
+
+  get token() {
+    switch (this.data.tag) {
+      case 'number':
+        return this.data.value.toString();
+      case 'binaryFunction':
+        return this.data.token;
+      case 'unaryFunction':
+        return this.data.token;
+    }
+  }
+
+  GetNumber(): number {
+    if (this.data.tag !== 'number') {
+      throw new Error('Should have been a number but found: ' + this.data.tag);
+    }
+    return this.data.value;
+  }
+
+  GetBinaryFn(): BinaryFn {
+    if (this.data.tag !== 'binaryFunction') {
+      throw new Error('Should have been a number but found: ' + this.data.tag);
+    }
+    return this.data.fn;
+  }
+
+  toString() {
+    return JSON.stringify(this.data);
+  }
+}
+
+export type Expression = Term[];
 
 export function evaluate(contents: string): string {
   return evaluateExpression(parseTokensToTerms(tokenizer(contents))).token;
 }
 
-export function evaluateExpression(expression: Expression): TermType {
-  const stack: TermType[] = [];
+export function evaluateExpression(expression: Expression): Term {
+  const stack: Term[] = [];
 
   for (const term of expression) {
     if (term.tag === 'number') {
@@ -66,11 +98,8 @@ export function evaluateExpression(expression: Expression): TermType {
       const b = stack.pop();
       const a = stack.pop();
       if (a && b) {
-        const result = term.fn(
-          TermHelpers.GetNumber(a),
-          TermHelpers.GetNumber(b)
-        );
-        stack.push(TermHelpers.NumberTerm(result));
+        const result = term.GetBinaryFn()(a.GetNumber(), b.GetNumber());
+        stack.push(Term.MakeNumber(result));
       } else {
         throw new Error(
           `Unable to evaluate b/c binary function was expecting two terms. Got: ${a}, ${b}`
