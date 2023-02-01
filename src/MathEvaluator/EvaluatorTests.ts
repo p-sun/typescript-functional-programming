@@ -1,4 +1,5 @@
-import { evaluateExpression, evaluate, Expression, Term } from './Evaluator';
+import { evaluateExpression, evaluate, Expression } from './Evaluator';
+import Term from './Term';
 import tokenizer from './Tokenizer';
 import parseTokensToTerms from './TokensParser';
 

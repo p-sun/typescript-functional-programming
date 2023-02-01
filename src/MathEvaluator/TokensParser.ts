@@ -16,7 +16,7 @@
   4 + 2 * 3  ==> (4 (2 3 *) +) ==> 4 2 3 * +
 */
 
-import { Term } from './Evaluator';
+import Term from './Term';
 
 type OpStackTerm = '(' | Term;
 
