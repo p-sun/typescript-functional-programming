@@ -23,7 +23,7 @@ type NumberTerm = { tag: 'number'; value: number; token: string };
 
 type OperatorToken = '+' | '-' | '*' | '/';
 
-export type Term =
+export type TermType =
   | NumberTerm
   | {
       tag: 'binaryFunction';
@@ -33,16 +33,16 @@ export type Term =
   | { tag: 'unaryFunction'; token: string; fn: (a: number) => number };
 
 export const TermHelpers = {
-  NumberTerm(value: number): Term {
+  NumberTerm(value: number): TermType {
     return { tag: 'number', value, token: value.toString() };
   },
   BinaryOperator(
     token: OperatorToken,
     fn: (a: number, b: number) => number
-  ): Term {
+  ): TermType {
     return { tag: 'binaryFunction', token, fn };
   },
-  GetNumber(term: Term): number {
+  GetNumber(term: TermType): number {
     if (term.tag !== 'number') {
       throw new Error('Should have been a number but found: ' + term.tag);
     }
@@ -50,14 +50,14 @@ export const TermHelpers = {
   },
 };
 
-export type Expression = Term[];
+export type Expression = TermType[];
 
 export function evaluate(contents: string): string {
   return evaluateExpression(parseTokensToTerms(tokenizer(contents))).token;
 }
 
-export function evaluateExpression(expression: Expression): Term {
-  const stack: Term[] = [];
+export function evaluateExpression(expression: Expression): TermType {
+  const stack: TermType[] = [];
 
   for (const term of expression) {
     if (term.tag === 'number') {

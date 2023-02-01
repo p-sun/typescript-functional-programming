@@ -2,13 +2,16 @@ import {
   evaluateExpression,
   evaluate,
   Expression,
-  Term,
+  TermType,
   TermHelpers,
 } from './Evaluator';
 import tokenizer from './Tokenizer';
 import parseTokensToTerms from './TokensParser';
 
-function assertEvaluateExpressionEqual(expression: Expression, expected: Term) {
+function assertEvaluateExpressionEqual(
+  expression: Expression,
+  expected: TermType
+) {
   const actual = evaluateExpression(expression);
   if (actual.token !== expected.token) {
     console.warn('EXPECTED: ' + expected.token + ' ACTUAL: ' + actual.token);

@@ -16,10 +16,10 @@
   4 + 2 * 3  ==> (4 (2 3 *) +) ==> 4 2 3 * +
 */
 
-import { Term, TermHelpers } from './Evaluator';
+import { TermType, TermHelpers } from './Evaluator';
 
-export default function parseTokensToTerms(tokens: string[]): Term[] {
-  let result: Term[] = [];
+export default function parseTokensToTerms(tokens: string[]): TermType[] {
+  let result: TermType[] = [];
   let opStack: string[] = [];
 
   for (const token of tokens) {
@@ -50,7 +50,7 @@ export default function parseTokensToTerms(tokens: string[]): Term[] {
 }
 
 // Move all terms AFTER the last '(' parenthesis from opStack to result stack.
-function moveFromOpStack(result: Term[], opStack: string[]) {
+function moveFromOpStack(result: TermType[], opStack: string[]) {
   const parensIdx = opStack.lastIndexOf('(');
 
   const afterParens = opStack.slice(parensIdx + 1);
@@ -66,7 +66,7 @@ function moveFromOpStack(result: Term[], opStack: string[]) {
   opStack.push(...beforeParens);
 }
 
-function toTerm(token: string): Term {
+function toTerm(token: string): TermType {
   if (token === '+') {
     return TermHelpers.BinaryOperator(token, (a, b) => a + b);
   } else if (token === '-') {
