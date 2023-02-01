@@ -22,10 +22,7 @@ export default class Term {
     return new Term({ tag: 'number', value });
   }
 
-  static MakeBinaryOperator(
-    token: OperatorToken,
-    fn: (a: number, b: number) => number
-  ): Term {
+  static MakeBinaryOperator(token: OperatorToken, fn: BinaryFn): Term {
     return new Term({ tag: 'binaryFunction', token: token, fn });
   }
 

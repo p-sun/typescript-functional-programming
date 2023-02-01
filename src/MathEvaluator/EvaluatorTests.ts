@@ -74,6 +74,7 @@ export function runEvaluatorTests() {
     assertEvaluationEqual('2 + 3 * 9 + 8 + 10 + 21 * 3 * 10 - 5 * 4', 657);
 
     assertTokenizerEqual('3 * 4 + 5', ['3', '*', '4', '+', '5']);
+    assertTokenizerEqual('3*4+5', ['3', '*', '4', '+', '5']);
 
     console.log('Completed Tests');
   } catch (e) {
