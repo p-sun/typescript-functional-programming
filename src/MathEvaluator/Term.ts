@@ -9,9 +9,11 @@ type TermType =
     }
   | {
       tag: 'unaryFunction';
-      token: string;
+      token: Token;
       fn: (a: number) => number;
     };
+
+export type Token = string;
 
 export default class Term {
   private constructor(private readonly data: TermType) {}

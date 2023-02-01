@@ -16,11 +16,11 @@
   4 + 2 * 3  ==> (4 (2 3 *) +) ==> 4 2 3 * +
 */
 
-import Term from './Term';
+import Term, { Token } from './Term';
 
 type OpStackTerm = '(' | Term;
 
-export default function parseTokensToTerms(tokens: string[]): Term[] {
+export default function parseTokensToTerms(tokens: Token[]): Term[] {
   let result: Term[] = [];
   let opStack: OpStackTerm[] = [];
 
@@ -66,9 +66,9 @@ function moveFromOpStack(result: Term[], opStack: OpStackTerm[]) {
   opStack.push(...beforeParens);
 }
 
-function isHigherPrecedence(a: OpStackTerm, b: string) {
+function isHigherPrecedence(a: OpStackTerm, b: Token) {
   const aToken = getToken(a);
-  const precedence: { [key: string]: number } = {
+  const precedence: { [key: Token]: number } = {
     '(': 1,
     '+': 2,
     '-': 2,
@@ -92,7 +92,7 @@ function getTerm(opStackTerm: OpStackTerm): Term {
   return opStackTerm;
 }
 
-function toTerm(token: string): Term {
+function toTerm(token: Token): Term {
   if (token === '+') {
     return Term.MakeBinaryOperator(token, (a, b) => a + b);
   } else if (token === '-') {
