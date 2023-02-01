@@ -1,5 +1,5 @@
 import { evaluateExpression, evaluate, Expression } from './Evaluator';
-import Term from './Term';
+import Term, { Token } from './Term';
 import tokenizer from './Tokenizer';
 import parseTokensToTerms from './TokensParser';
 
@@ -22,6 +22,13 @@ function assertParserEqual(expression: string, expected: string) {
 function assertEvaluationEqual(contents: string, expected: number) {
   const actual = evaluate(contents);
   if (actual !== expected) {
+    console.warn(contents + ' | EXPECTED: ' + expected + ' ACTUAL: ' + actual);
+  }
+}
+
+function assertTokenizerEqual(contents: string, expected: Token[]) {
+  const actual = tokenizer(contents);
+  if (actual.toString() !== expected.toString()) {
     console.warn(contents + ' | EXPECTED: ' + expected + ' ACTUAL: ' + actual);
   }
 }
@@ -65,6 +72,8 @@ export function runEvaluatorTests() {
     assertEvaluationEqual('( ( 2 + 3 ) * ( 9 - 21 * 3 ) * 5 ) * 4', -5400);
     assertEvaluationEqual('2 + 3 * 9 - 21 * 3 * 5 * 4', -1231);
     assertEvaluationEqual('2 + 3 * 9 + 8 + 10 + 21 * 3 * 10 - 5 * 4', 657);
+
+    assertTokenizerEqual('3 * 4 + 5', ['3', '*', '4', '+', '5']);
 
     console.log('Completed Tests');
   } catch (e) {
