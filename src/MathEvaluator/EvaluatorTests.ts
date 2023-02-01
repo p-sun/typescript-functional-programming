@@ -19,7 +19,7 @@ function assertParserEqual(expression: string, expected: string) {
   }
 }
 
-function assertEvaluationEqual(contents: string, expected: string) {
+function assertEvaluationEqual(contents: string, expected: number) {
   const actual = evaluate(contents);
   if (actual !== expected) {
     console.warn(contents + ' | EXPECTED: ' + expected + ' ACTUAL: ' + actual);
@@ -52,19 +52,19 @@ export function runEvaluatorTests() {
     assertParserEqual('( 2 / ( 3 + 1 ) )', '2 3 1 + /');
     assertParserEqual('2 + 3 * 9 - 21', '2 3 9 * + 21 -');
 
-    assertEvaluationEqual('4 + 2 * 3', '10');
-    assertEvaluationEqual('4 * 2 + 3', '11');
-    assertEvaluationEqual('( 4 + 2 ) * 3', '18');
-    assertEvaluationEqual('4 + ( 2 * 3 )', '10');
-    assertEvaluationEqual('4 * ( 2 + 3 )', '20');
-    assertEvaluationEqual('( 2 + 3 * 5 ) * 4', '68');
-    assertEvaluationEqual('( ( ( 4 + 2 ) ) * 7 )', '42');
-    assertEvaluationEqual('( 2 / ( 3 + 1 ) )', '0.5');
-    assertEvaluationEqual('( 3 * 4 + 5 )', '17');
-    assertEvaluationEqual('2 * 1 + 2 * ( 3 * 4 + 5 )', '36');
-    assertEvaluationEqual('( ( 2 + 3 ) * ( 9 - 21 * 3 ) * 5 ) * 4', '-5400');
-    assertEvaluationEqual('2 + 3 * 9 - 21 * 3 * 5 * 4', '-1231');
-    assertEvaluationEqual('2 + 3 * 9 + 8 + 10 + 21 * 3 * 10 - 5 * 4', '657');
+    assertEvaluationEqual('4 + 2 * 3', 10);
+    assertEvaluationEqual('4 * 2 + 3', 11);
+    assertEvaluationEqual('( 4 + 2 ) * 3', 18);
+    assertEvaluationEqual('4 + ( 2 * 3 )', 10);
+    assertEvaluationEqual('4 * ( 2 + 3 )', 20);
+    assertEvaluationEqual('( 2 + 3 * 5 ) * 4', 68);
+    assertEvaluationEqual('( ( ( 4 + 2 ) ) * 7 )', 42);
+    assertEvaluationEqual('( 2 / ( 3 + 1 ) )', 0.5);
+    assertEvaluationEqual('( 3 * 4 + 5 )', 17);
+    assertEvaluationEqual('2 * 1 + 2 * ( 3 * 4 + 5 )', 36);
+    assertEvaluationEqual('( ( 2 + 3 ) * ( 9 - 21 * 3 ) * 5 ) * 4', -5400);
+    assertEvaluationEqual('2 + 3 * 9 - 21 * 3 * 5 * 4', -1231);
+    assertEvaluationEqual('2 + 3 * 9 + 8 + 10 + 21 * 3 * 10 - 5 * 4', 657);
 
     console.log('Completed Tests');
   } catch (e) {

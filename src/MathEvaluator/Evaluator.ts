@@ -22,8 +22,10 @@ POSTFIX is also called "Reverse Polish Notation (RPN)"
 
 export type Expression = Term[];
 
-export function evaluate(contents: string): string {
-  return evaluateExpression(parseTokensToTerms(tokenizer(contents))).token;
+export function evaluate(contents: string): number {
+  return evaluateExpression(
+    parseTokensToTerms(tokenizer(contents))
+  ).GetNumber();
 }
 
 export function evaluateExpression(expression: Expression): Term {
