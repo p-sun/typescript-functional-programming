@@ -57,6 +57,7 @@ export function runEvaluatorTests() {
     assertEvaluationEqual('4 + ( 2 * 3 )', '10');
     assertEvaluationEqual('4 * ( 2 + 3 )', '20');
     assertEvaluationEqual('( 2 + 3 * 5 ) * 4', '68');
+    assertEvaluationEqual('( ( ( 4 + 2 ) ) * 7 )', '42');
     assertEvaluationEqual('( 2 / ( 3 + 1 ) )', '0.5');
     assertEvaluationEqual('( 3 * 4 + 5 )', '17');
     assertEvaluationEqual('2 * 1 + 2 * ( 3 * 4 + 5 )', '36');

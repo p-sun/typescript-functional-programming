@@ -18,30 +18,30 @@
 
 import { Term } from './Evaluator';
 
+type OpStackTerm = '(' | Term;
+
 export default function parseTokensToTerms(tokens: string[]): Term[] {
   let result: Term[] = [];
-  let opStack: string[] = [];
+  let opStack: OpStackTerm[] = [];
 
   for (const token of tokens) {
     if (token === '(') {
       opStack.push(token);
-      continue;
     } else if (token === ')') {
       moveFromOpStack(result, opStack);
-      continue;
-    }
-
-    const term = toTerm(token);
-    if (term.tag === 'number') {
-      result.push(term);
-    } else if (term.tag === 'binaryFunction') {
-      const topOfOpStack = opStack[opStack.length - 1];
-      if (topOfOpStack && compareTokenPrecedence(topOfOpStack, token) > 0) {
-        moveFromOpStack(result, opStack);
-      }
-      opStack.push(token);
     } else {
-      throw new Error('Unimplemented parsing for term ' + term.token);
+      const term = toTerm(token);
+      if (term.tag === 'number') {
+        result.push(term);
+      } else if (term.tag === 'binaryFunction') {
+        const topOfOpStack = opStack[opStack.length - 1];
+        if (topOfOpStack && isHigherPrecedence(topOfOpStack, token)) {
+          moveFromOpStack(result, opStack);
+        }
+        opStack.push(term);
+      } else {
+        throw new Error('Unimplemented parsing for term ' + term.token);
+      }
     }
   }
 
@@ -50,11 +50,11 @@ export default function parseTokensToTerms(tokens: string[]): Term[] {
 }
 
 // Move all terms AFTER the last '(' parenthesis from opStack to result stack.
-function moveFromOpStack(result: Term[], opStack: string[]) {
+function moveFromOpStack(result: Term[], opStack: OpStackTerm[]) {
   const parensIdx = opStack.lastIndexOf('(');
 
   const afterParens = opStack.slice(parensIdx + 1);
-  result.push(...afterParens.reverse().map((token) => toTerm(token)));
+  result.push(...afterParens.reverse().map((term) => getTerm(term)));
 
   // newOpStack has all ops BEFORE the '(':
   // opStack                                parensIdx           beforeParens
@@ -64,6 +64,32 @@ function moveFromOpStack(result: Term[], opStack: string[]) {
   const beforeParens = parensIdx === -1 ? [] : opStack.slice(0, parensIdx);
   opStack.length = 0;
   opStack.push(...beforeParens);
+}
+
+function isHigherPrecedence(a: OpStackTerm, b: string) {
+  const aToken = getToken(a);
+  const precedence: { [key: string]: number } = {
+    '(': 1,
+    '+': 2,
+    '-': 2,
+    '*': 3,
+    '/': 3,
+  };
+  return precedence[aToken] > precedence[b];
+}
+
+function getToken(opStackTerm: OpStackTerm) {
+  if (opStackTerm === '(') {
+    return '(';
+  }
+  return opStackTerm.token;
+}
+
+function getTerm(opStackTerm: OpStackTerm): Term {
+  if (opStackTerm === '(') {
+    throw new Error(`OpStackTerm is an '(', not a term. ${opStackTerm}`);
+  }
+  return opStackTerm;
 }
 
 function toTerm(token: string): Term {
@@ -83,17 +109,4 @@ function toTerm(token: string): Term {
   }
 
   throw new Error('Unable to parse string token to Term. Token: ' + token);
-}
-
-function compareTokenPrecedence(a: string, b: string) {
-  const precedence: { [key: string]: number } = {
-    '+': 1,
-    '-': 1,
-    '*': 2,
-    '/': 2,
-  };
-  if (precedence[a] === precedence[b]) {
-    return 0;
-  }
-  return precedence[a] > precedence[b] ? 1 : -1;
 }
