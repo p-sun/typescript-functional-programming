@@ -69,20 +69,25 @@ class ParseResult<T> {
 
 type Parser<T> = (buffer: TextBuffer) => ParseResult<T> | undefined;
 
+function andParser<S, T>(p1: Parser<S>, p2: Parser<T>): Parser<[S, T]> {
+  return (buffer: TextBuffer) => {
+    return p1(buffer)?.then((value1) => {
+      return p2(buffer)?.then((value2) => {
+        return new ParseResult({
+          tag: 'value',
+          value: [value1, value2],
+        });
+      });
+    });
+  };
+}
+
 const buffer = new TextBuffer('Hello World');
 const H_parser = parseChars(['H']);
 const e_parser = parseChars(['e']);
-
-const result = H_parser(buffer)
-  ?.then((value1) => {
-    return e_parser(buffer)?.then((value2) => {
-      return new ParseResult({ tag: 'value', value: [value1, value2] });
-    });
-  })
-  ?.catch((message) => {
-    console.log('**** caught error: ', message);
-  });
-console.log(`***** parse result: ${result}`);
+const He_parser = andParser(H_parser, e_parser);
+const resultHe = He_parser(buffer);
+console.log(`***** parse result: ${resultHe}`);
 
 function parseChars(chars: Array<string>): Parser<string> {
   const set = new Set(chars);
