@@ -15,12 +15,8 @@ export class TextBuffer {
     return this.contents.slice(start, start + count);
   }
 
-  unget(count: number = 1) {
-    if (this.offset - count <= 0) {
-      this.offset = 0;
-    } else {
-      this.offset -= count;
-    }
+  unget(length: number = 1) {
+    this.offset = Math.max(0, this.offset - length);
   }
 }
 
