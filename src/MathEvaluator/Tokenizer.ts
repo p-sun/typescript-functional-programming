@@ -26,7 +26,6 @@ class ParseResult<T> {
     public readonly data:
       | { tag: 'value'; value: T }
       | { tag: 'error'; message: string }
-      | { tag: 'endOfBuffer' }
   ) {}
 
   toString() {
@@ -40,20 +39,16 @@ class ParseResult<T> {
   static error<T>(message: string) {
     return new ParseResult<T>({ tag: 'error', message });
   }
-
-  static endOfBuffer() {
-    return new ParseResult({ tag: 'endOfBuffer' });
-  }
 }
 
-type Parser<T> = (buffer: TextBuffer) => ParseResult<T>;
+type Parser<T> = (buffer: TextBuffer) => ParseResult<T> | undefined;
 
 function parseChars(chars: Array<string>): Parser<string> {
   const set = new Set(chars);
   return (buffer) => {
     const l = buffer.get();
     if (l === undefined) {
-      return ParseResult.endOfBuffer() as ParseResult<string>;
+      return undefined;
     } else if (set.has(l)) {
       return ParseResult.value(l);
     } else {
@@ -78,20 +73,20 @@ export default function tokenizer(contents: string): Token[] {
   do {
     for (const parser of parsers) {
       result = parser(buffer);
-      if (result.data.tag === 'error') {
-        buffer.unget();
+      if (!result) {
+        break;
       } else if (result.data.tag === 'value') {
         tokens.push(result.data.value);
         break;
       } else {
-        break; // Reached endOfBuffer
+        buffer.unget();
       }
     }
 
     if (result && result.data.tag === 'error') {
       return ['No Parser exist: ' + result.data.message];
     }
-  } while (result && result.data.tag !== 'endOfBuffer');
+  } while (result);
 
   return tokens;
 }
