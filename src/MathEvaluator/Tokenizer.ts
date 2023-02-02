@@ -5,14 +5,15 @@ export class TextBuffer {
 
   constructor(private readonly contents: string) {}
 
-  get(count: number = 1) {
+  get(length: number = 1) {
     const start = this.offset;
-    if (this.offset + count >= this.contents.length) {
-      this.offset = this.contents.length;
-    } else {
-      this.offset += count;
+    if (start + length <= this.contents.length) {
+      this.offset += length;
+      return this.contents.slice(start, start + length);
     }
-    return this.contents.slice(start, start + count);
+
+    this.offset = this.contents.length;
+    return undefined;
   }
 
   unget(length: number = 1) {
@@ -25,6 +26,7 @@ class ParseResult<T> {
     public readonly data:
       | { tag: 'value'; value: T }
       | { tag: 'error'; message: string }
+      | { tag: 'endOfBuffer' }
   ) {}
 
   toString() {
@@ -38,34 +40,58 @@ class ParseResult<T> {
   static error<T>(message: string) {
     return new ParseResult<T>({ tag: 'error', message });
   }
+
+  static endOfBuffer() {
+    return new ParseResult({ tag: 'endOfBuffer' });
+  }
 }
 
 type Parser<T> = (buffer: TextBuffer) => ParseResult<T>;
 
-function parseChars(chars: Set<string>): Parser<string> {
+function parseChars(chars: Array<string>): Parser<string> {
+  const set = new Set(chars);
   return (buffer) => {
     const l = buffer.get();
-    if (chars.has(l)) {
+    if (l === undefined) {
+      return ParseResult.endOfBuffer() as ParseResult<string>;
+    } else if (set.has(l)) {
       return ParseResult.value(l);
     } else {
-      return ParseResult.error(`Expected letter '${chars}' but got '${l}'`);
+      return ParseResult.error(
+        `Expected letter from set '${chars}' but got '${l}'`
+      );
     }
   };
 }
 
 export default function tokenizer(contents: string): Token[] {
-  let buffer = new TextBuffer(contents);
+  const whitespaceRemoved = contents.replace(/\s/g, '');
+  let buffer = new TextBuffer(whitespaceRemoved);
   let tokens = new Array<string>();
-  const charParser = parseChars(new Set(['3', '*', '4', '+', '5']));
+  const parsers = [
+    parseChars(['(', ')']),
+    parseChars(['+', '-', '*', '/']),
+    parseChars(Array.from('0123456789')),
+  ];
 
   let result: ParseResult<string> | undefined;
-
   do {
-    result = charParser(buffer);
-    if (result.data.tag === 'value') {
-      tokens.push(result.data.value);
+    for (const parser of parsers) {
+      result = parser(buffer);
+      if (result.data.tag === 'error') {
+        buffer.unget();
+      } else if (result.data.tag === 'value') {
+        tokens.push(result.data.value);
+        break;
+      } else {
+        break; // Reached endOfBuffer
+      }
     }
-  } while (result.data.tag !== 'error');
+
+    if (result && result.data.tag === 'error') {
+      return ['No Parser exist: ' + result.data.message];
+    }
+  } while (result && result.data.tag !== 'endOfBuffer');
 
   return tokens;
 }
