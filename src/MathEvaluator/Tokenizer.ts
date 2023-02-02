@@ -1,7 +1,7 @@
 import { Token } from './Term';
 
 export class TextBuffer {
-  offset = 0;
+  private offset = 0;
 
   constructor(private readonly contents: string) {}
 
@@ -18,6 +18,16 @@ export class TextBuffer {
 
   unget(length: number = 1) {
     this.offset = Math.max(0, this.offset - length);
+  }
+
+  seek(pos: number) {
+    if (pos >= 0 && pos < this.contents.length) {
+      this.offset = pos;
+    } else {
+      throw new Error(
+        `Seeking position ${pos} that doesnt exist on content: ${this.contents}`
+      );
+    }
   }
 }
 
@@ -39,9 +49,40 @@ class ParseResult<T> {
   static error<T>(message: string) {
     return new ParseResult<T>({ tag: 'error', message });
   }
+
+  then<U>(
+    fn: (value: T) => ParseResult<U> | undefined
+  ): ParseResult<U> | undefined {
+    if (this.data.tag === 'value') {
+      return fn(this.data.value);
+    }
+    return new ParseResult<U>({ tag: 'error', message: this.data.message });
+  }
+
+  catch(fn: (message: string) => void) {
+    if (this.data.tag === 'error') {
+      fn(this.data.message);
+    }
+    return this;
+  }
 }
 
 type Parser<T> = (buffer: TextBuffer) => ParseResult<T> | undefined;
+
+const buffer = new TextBuffer('Hello World');
+const H_parser = parseChars(['H']);
+const e_parser = parseChars(['e']);
+
+const result = H_parser(buffer)
+  ?.then((value1) => {
+    return e_parser(buffer)?.then((value2) => {
+      return new ParseResult({ tag: 'value', value: [value1, value2] });
+    });
+  })
+  ?.catch((message) => {
+    console.log('**** caught error: ', message);
+  });
+console.log(`***** parse result: ${result}`);
 
 function parseChars(chars: Array<string>): Parser<string> {
   const set = new Set(chars);
