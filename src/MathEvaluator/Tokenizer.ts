@@ -31,7 +31,7 @@ export class TextBuffer {
   }
 }
 
-class ParseResult<T> {
+export class ParseResult<T> {
   constructor(
     public readonly data:
       | { tag: 'value'; value: T }
@@ -74,19 +74,31 @@ class ParseResult<T> {
   }
 }
 
-type Parser<T> = (buffer: TextBuffer) => ParseResult<T> | undefined;
+export type Parser<T> = (buffer: TextBuffer) => ParseResult<T> | undefined;
 
-function AND_Parser<S, T>(p1: Parser<S>, p2: Parser<T>): Parser<[S, T]> {
+export function AND_Parser<S, T>(
+  p1: Parser<S>,
+  p2: Parser<T>
+): Parser<(S | T)[]> {
   return (buffer: TextBuffer) => {
-    return p1(buffer)?.then((value1) => {
-      return p2(buffer)?.then((value2) => {
-        return ParseResult.MakeValue([value1, value2]);
+    return p1(buffer)
+      ?.then((value1) => {
+        return p2(buffer)
+          ?.then((value2) => {
+            return ParseResult.MakeValue([value1, value2]);
+          })
+          ?.catch((msg) => {
+            buffer.unget();
+          });
+      })
+      ?.catch((msg) => {
+        // TODO: Cleanup unwinding
+        buffer.unget();
       });
-    });
   };
 }
 
-function OR_Parser<S, T>(p1: Parser<S>, p2: Parser<T>): Parser<S | T> {
+export function OR_Parser<S, T>(p1: Parser<S>, p2: Parser<T>): Parser<S | T> {
   return (buffer: TextBuffer) => {
     return p1(buffer)?.errorThen((error1) => {
       buffer.unget();
@@ -99,7 +111,7 @@ function OR_Parser<S, T>(p1: Parser<S>, p2: Parser<T>): Parser<S | T> {
 }
 
 // Not used. Just an academic exploration.
-function REPEAT_TWICE_Parser<T>(
+export function REPEAT_TWICE_Parser<T>(
   parser: Parser<T>,
   join: (value1: T, value2: T) => T
 ): Parser<T> {
@@ -114,7 +126,7 @@ function REPEAT_TWICE_Parser<T>(
 
 // Continue parsing until you can't parse anymore.
 // i.e. Match 1 or more, like the '+' in regex.
-function REPEAT_Parser<T>(
+export function REPEAT_Parser<T>(
   parser: Parser<T>,
   join: (value1: T, value2: T) => T
 ): Parser<T> {
@@ -128,7 +140,7 @@ function REPEAT_Parser<T>(
           combined = combined === undefined ? newVal : join(combined, newVal);
           return result;
         })
-        ?.catch((message) => {
+        ?.catch((msg) => {
           buffer.unget();
         });
     } while (result && result.data.tag === 'value');
@@ -137,61 +149,7 @@ function REPEAT_Parser<T>(
   };
 }
 
-const buffer0 = new TextBuffer('Hello World');
-const r0 = parseChars(['M'])(buffer0)?.catch((message) => {
-  console.log('catch msg: ' + message);
-});
-console.log(`***** parse with error 0: ${r0}`);
-
-const concatStrings = (str1: string, str2: string) => str1 + str2;
-
-let buffer = new TextBuffer('Hello World');
-let result: ParseResult<any> | undefined;
-const H_parser = parseChars(['H']);
-const e_parser = parseChars(['e']);
-const M_parser = parseChars(['M']);
-
-result = AND_Parser(H_parser, e_parser)(buffer);
-console.log(`***** parse AND result 1: ${result} | next: ${buffer.get(3)}`); // [H, e], Next: llo
-
-buffer = new TextBuffer('Hello World');
-result = OR_Parser(H_parser, e_parser)(buffer);
-console.log(`***** parse result 2: ${result}`); // H
-
-buffer = new TextBuffer('Hello World');
-result = OR_Parser(e_parser, H_parser)(buffer);
-console.log(`***** parse result 3: ${result}`); // H
-
-buffer = new TextBuffer('Hello World');
-result = OR_Parser(M_parser, e_parser)(buffer);
-console.log(`***** parse result 4: ${result} | next: ${buffer.get(3)}`); // M error, Next: Hel
-
-buffer = new TextBuffer('HHHello World');
-result = REPEAT_TWICE_Parser(H_parser, concatStrings)(buffer); // H{2}
-console.log(`***** parse result 5: ${result}`); // HH
-
-buffer = new TextBuffer('HHHello World');
-const repeatH_Parser = REPEAT_Parser(H_parser, concatStrings); // H+
-result = repeatH_Parser(buffer);
-console.log(`***** parse result 6: ${result}`); // HHH
-
-buffer = new TextBuffer('ello World');
-result = repeatH_Parser(buffer);
-console.log(`***** parse result 6.1: ${result} | next: ${buffer.get(3)}`); // e error, Next: ell
-
-buffer = new TextBuffer('ello World');
-const r7 = OR_Parser(repeatH_Parser, e_parser)(buffer); // (H+|e)
-console.log(`***** parse result 7: ${r7}`); // e
-
-buffer = new TextBuffer('HHHello World');
-const r8 = OR_Parser(repeatH_Parser, e_parser)(buffer); // (H+|e)
-console.log(`***** parse result 8: ${r8}`); // HHH
-
-buffer = new TextBuffer('HHHello World');
-const r9 = AND_Parser(repeatH_Parser, e_parser)(buffer); // H+e
-console.log(`***** parse result 9: ${r9}`); // [HHH, e]
-
-function parseChars(chars: Array<string>): Parser<string> {
+export function parseChars(chars: Array<string>): Parser<string> {
   const set = new Set(chars);
   return (buffer) => {
     const l = buffer.get();
@@ -200,9 +158,7 @@ function parseChars(chars: Array<string>): Parser<string> {
     } else if (set.has(l)) {
       return ParseResult.MakeValue(l);
     } else {
-      return ParseResult.MakeError(
-        `Expected letter from set '${chars}' but got '${l}'`
-      );
+      return ParseResult.MakeError(`Expected letter '${chars}' but got '${l}'`);
     }
   };
 }
