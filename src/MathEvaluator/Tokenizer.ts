@@ -142,31 +142,27 @@ function parseChars(chars: Array<string>): Parser<string> {
 export default function tokenizer(contents: string): Token[] {
   const whitespaceRemoved = contents.replace(/\s/g, '');
   let buffer = new TextBuffer(whitespaceRemoved);
-  let tokens = new Array<string>();
-  const parsers = [
-    parseChars(['(', ')']),
-    parseChars(['+', '-', '*', '/']),
-    parseChars(Array.from('0123456789')),
-  ];
 
-  let result: ParseResult<string> | undefined;
-  do {
-    for (const parser of parsers) {
-      result = parser(buffer);
-      if (!result) {
-        break;
-      } else if (result.data.tag === 'value') {
-        tokens.push(result.data.value);
-        break;
+  const parenthesisParser = parseChars(['(', ')']);
+  const opParser = parseChars(['+', '-', '*', '/']);
+  const digitParser = parseChars(Array.from('0123456789'));
+  const allParsers = OR_Parser(
+    parenthesisParser,
+    OR_Parser(opParser, digitParser)
+  );
+
+  let tokens = new Array<string>();
+  let result = allParsers(buffer);
+  while (result) {
+    if (result) {
+      if (result.data.tag === 'error') {
+        throw new Error('No Parser exist: ' + result.data.message);
       } else {
-        buffer.unget();
+        tokens.push(result.data.value);
       }
     }
-
-    if (result && result.data.tag === 'error') {
-      return ['No Parser exist: ' + result.data.message];
-    }
-  } while (result);
+    result = allParsers(buffer);
+  }
 
   return tokens;
 }
