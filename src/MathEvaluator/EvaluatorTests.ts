@@ -90,35 +90,30 @@ function runParserCombinatorTests() {
   assertParseResult(HelloWorld, 'H', 'ell', Or_Parser(e, H)); // (e|H)
   assertParseResult(
     HelloWorld,
-    `Expected letter 'R' but got 'H'`,
+    `Expected 'R' but got 'H'`,
     'Hel',
     Or_Parser(R, e)
   ); // (M|e)
   assertParseResult(
     HelloWorld,
-    `Expected letter 'R' but got 'H'`,
+    `Expected 'R' but got 'H'`,
     'Hel',
     And_Parser(R, e)
   ); // Me
   assertParseResult(
     HelloWorld,
-    `Expected letter 'R' but got 'H'`,
+    `Expected 'R' but got 'H'`,
     'Hel',
     And_Parser(R, e)
   ); // Me
   assertParseResult(
     HelloWorld,
-    `Expected letter 'R' but got 'e'`,
+    `Expected 'R' but got 'e'`,
     'Hel',
     And_Parser(H, R)
   ); // HR
   assertParseResult(HHHelloWorld, `HHH`, 'ell', repeatH); // H+
-  assertParseResult(
-    elloWorld,
-    `Expected letter 'H' but got 'e'`,
-    'ell',
-    repeatH
-  ); // H+
+  assertParseResult(elloWorld, `Expected 'H' but got 'e'`, 'ell', repeatH); // H+
   assertParseResult(elloWorld, `e`, 'llo', Or_Parser(repeatH, e)); // (H+|e)
   assertParseResult(HHHelloWorld, `HHH`, 'ell', Or_Parser(repeatH, e)); // (H+|e)
   assertParseResult(HHHelloWorld, `HHH,e`, 'llo', And_Parser(repeatH, e)); // H+e

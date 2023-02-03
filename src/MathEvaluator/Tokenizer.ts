@@ -59,7 +59,9 @@ export class ParseResult<T> {
     return ParseResult.MakeError(this.data.message);
   }
 
-  errorThen<U>(fn: (result: this) => ParseResult<T | U> | undefined) {
+  errorThen<U>(
+    fn: (result: this) => ParseResult<T | U> | undefined
+  ): ParseResult<T | U> | undefined {
     if (this.data.tag === 'error') {
       return fn(this);
     }
@@ -144,7 +146,7 @@ export function parseChars(chars: Array<string>): Parser<string> {
     } else if (set.has(l)) {
       return ParseResult.MakeValue(l);
     } else {
-      return ParseResult.MakeError(`Expected letter '${chars}' but got '${l}'`);
+      return ParseResult.MakeError(`Expected '${chars}' but got '${l}'`);
     }
   };
 }
