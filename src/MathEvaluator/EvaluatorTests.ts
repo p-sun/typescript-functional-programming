@@ -1,11 +1,10 @@
 import { evaluateExpression, evaluate, Expression } from './Evaluator';
 import Term from './Term';
 import tokenizer, {
-  AND_Parser,
-  OR_Parser,
+  And_Parser,
+  Or_Parser,
   parseChars,
-  REPEAT_Parser,
-  REPEAT_TWICE_Parser,
+  Repeat_Parser,
   TextBuffer,
   type Parser,
 } from './Tokenizer';
@@ -84,41 +83,35 @@ function runParserCombinatorTests() {
   const e = parseChars(['e']);
   const R = parseChars(['R']);
 
-  const repeatH = REPEAT_Parser(H, concatStrings); // H+
+  const repeatH = Repeat_Parser(H, concatStrings); // H+
 
-  assertParseResult(HelloWorld, `H,e`, 'llo', AND_Parser(H, e)); // He
-  assertParseResult(HelloWorld, 'H', 'ell', OR_Parser(H, e)); // (H|e)
-  assertParseResult(HelloWorld, 'H', 'ell', OR_Parser(e, H)); // (e|H)
+  assertParseResult(HelloWorld, `H,e`, 'llo', And_Parser(H, e)); // He
+  assertParseResult(HelloWorld, 'H', 'ell', Or_Parser(H, e)); // (H|e)
+  assertParseResult(HelloWorld, 'H', 'ell', Or_Parser(e, H)); // (e|H)
   assertParseResult(
     HelloWorld,
     `Expected letter 'R' but got 'H'`,
     'Hel',
-    OR_Parser(R, e)
+    Or_Parser(R, e)
   ); // (M|e)
   assertParseResult(
     HelloWorld,
     `Expected letter 'R' but got 'H'`,
     'Hel',
-    AND_Parser(R, e)
+    And_Parser(R, e)
   ); // Me
   assertParseResult(
     HelloWorld,
     `Expected letter 'R' but got 'H'`,
     'Hel',
-    AND_Parser(R, e)
+    And_Parser(R, e)
   ); // Me
   assertParseResult(
     HelloWorld,
     `Expected letter 'R' but got 'e'`,
     'Hel',
-    AND_Parser(H, R)
+    And_Parser(H, R)
   ); // HR
-  assertParseResult(
-    HHHelloWorld,
-    `HH`,
-    'Hel',
-    REPEAT_TWICE_Parser(H, concatStrings)
-  ); // H{2}
   assertParseResult(HHHelloWorld, `HHH`, 'ell', repeatH); // H+
   assertParseResult(
     elloWorld,
@@ -126,9 +119,9 @@ function runParserCombinatorTests() {
     'ell',
     repeatH
   ); // H+
-  assertParseResult(elloWorld, `e`, 'llo', OR_Parser(repeatH, e)); // (H+|e)
-  assertParseResult(HHHelloWorld, `HHH`, 'ell', OR_Parser(repeatH, e)); // (H+|e)
-  assertParseResult(HHHelloWorld, `HHH,e`, 'llo', AND_Parser(repeatH, e)); // H+e
+  assertParseResult(elloWorld, `e`, 'llo', Or_Parser(repeatH, e)); // (H+|e)
+  assertParseResult(HHHelloWorld, `HHH`, 'ell', Or_Parser(repeatH, e)); // (H+|e)
+  assertParseResult(HHHelloWorld, `HHH,e`, 'llo', And_Parser(repeatH, e)); // H+e
 }
 
 function assertTokenizerEqual(contents: string, expected: string) {

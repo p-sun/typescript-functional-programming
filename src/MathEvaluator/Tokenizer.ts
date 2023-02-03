@@ -76,7 +76,7 @@ export class ParseResult<T> {
 
 export type Parser<T> = (buffer: TextBuffer) => ParseResult<T> | undefined;
 
-export function AND_Parser<S, T>(
+export function And_Parser<S, T>(
   p1: Parser<S>,
   p2: Parser<T>
 ): Parser<(S | T)[]> {
@@ -98,7 +98,7 @@ export function AND_Parser<S, T>(
   };
 }
 
-export function OR_Parser<S, T>(p1: Parser<S>, p2: Parser<T>): Parser<S | T> {
+export function Or_Parser<S, T>(p1: Parser<S>, p2: Parser<T>): Parser<S | T> {
   return (buffer: TextBuffer) => {
     return p1(buffer)?.errorThen((error1) => {
       buffer.unget();
@@ -110,23 +110,9 @@ export function OR_Parser<S, T>(p1: Parser<S>, p2: Parser<T>): Parser<S | T> {
   };
 }
 
-// Not used. Just an academic exploration.
-export function REPEAT_TWICE_Parser<T>(
-  parser: Parser<T>,
-  join: (value1: T, value2: T) => T
-): Parser<T> {
-  return (buffer: TextBuffer) => {
-    return parser(buffer)?.then((value1) => {
-      return parser(buffer)?.then((value2) => {
-        return ParseResult.MakeValue(join(value1, value2));
-      });
-    });
-  };
-}
-
 // Continue parsing until you can't parse anymore.
 // i.e. Match 1 or more, like the '+' in regex.
-export function REPEAT_Parser<T>(
+export function Repeat_Parser<T>(
   parser: Parser<T>,
   join: (value1: T, value2: T) => T
 ): Parser<T> {
@@ -170,14 +156,14 @@ export default function tokenizer(contents: string): Token[] {
 
   const parenthesisParser = parseChars(['(', ')']);
   const opParser = parseChars(['+', '-', '*', '/']);
-  const digitParser = REPEAT_Parser(
+  const digitParser = Repeat_Parser(
     parseChars(Array.from('0123456789')),
     concatStrings
   );
-  const allParsers = OR_Parser(
+  const allParsers = Or_Parser(
     parenthesisParser,
-    OR_Parser(opParser, digitParser)
-  ); // TODO remove while loop
+    Or_Parser(opParser, digitParser)
+  ); // TODO: remove while loop
 
   let tokens = new Array<string>();
   let result = allParsers(buffer);
