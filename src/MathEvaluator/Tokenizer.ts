@@ -59,7 +59,14 @@ class ParseResult<T> {
     return new ParseResult<U>({ tag: 'error', message: this.data.message });
   }
 
-  catch(fn: (message: string) => void) {
+  errorThen<U>(fn: (result: this) => ParseResult<T | U> | undefined) {
+    if (this.data.tag === 'error') {
+      return fn(this);
+    }
+    return this;
+  }
+
+  catch(fn: (message: string) => void): this {
     if (this.data.tag === 'error') {
       fn(this.data.message);
     }
@@ -69,7 +76,7 @@ class ParseResult<T> {
 
 type Parser<T> = (buffer: TextBuffer) => ParseResult<T> | undefined;
 
-function andParser<S, T>(p1: Parser<S>, p2: Parser<T>): Parser<[S, T]> {
+function AND_Parser<S, T>(p1: Parser<S>, p2: Parser<T>): Parser<[S, T]> {
   return (buffer: TextBuffer) => {
     return p1(buffer)?.then((value1) => {
       return p2(buffer)?.then((value2) => {
@@ -82,12 +89,42 @@ function andParser<S, T>(p1: Parser<S>, p2: Parser<T>): Parser<[S, T]> {
   };
 }
 
-const buffer = new TextBuffer('Hello World');
+function OR_Parser<S, T>(p1: Parser<S>, p2: Parser<T>): Parser<S | T> {
+  return (buffer: TextBuffer) => {
+    return p1(buffer)?.errorThen((error1) => {
+      buffer.unget();
+      return p2(buffer)?.errorThen((error2) => {
+        return error1;
+      });
+    });
+  };
+}
+
+const buffer0 = new TextBuffer('Hello World');
+const r = parseChars(['M'])(buffer0)?.catch((message) => {
+  console.log('catch msg');
+});
+console.log(`***** parse with error: ${r}`);
+
+let buffer = new TextBuffer('Hello World');
 const H_parser = parseChars(['H']);
 const e_parser = parseChars(['e']);
-const He_parser = andParser(H_parser, e_parser);
-const resultHe = He_parser(buffer);
-console.log(`***** parse result: ${resultHe}`);
+const M_parser = parseChars(['M']);
+
+const r1 = AND_Parser(H_parser, e_parser)(buffer);
+console.log(`***** parse AND result: ${r1}`);
+
+buffer = new TextBuffer('Hello World');
+const r2 = OR_Parser(H_parser, e_parser)(buffer);
+console.log(`***** parse OR result: ${r2}`);
+
+buffer = new TextBuffer('Hello World');
+const r3 = OR_Parser(e_parser, H_parser)(buffer);
+console.log(`***** parse OR result 2: ${r3}`);
+
+buffer = new TextBuffer('Hello World');
+const r4 = OR_Parser(M_parser, e_parser)(buffer);
+console.log(`***** parse OR result 3: ${r4}`);
 
 function parseChars(chars: Array<string>): Parser<string> {
   const set = new Set(chars);
