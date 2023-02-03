@@ -1,35 +1,45 @@
 import { evaluateExpression, evaluate, Expression } from './Evaluator';
-import Term, { Token } from './Term';
+import Term from './Term';
 import tokenizer from './Tokenizer';
 import parseTokensToTerms from './TokensParser';
 
 function assertEvaluateExpressionEqual(expression: Expression, expected: Term) {
   const actual = evaluateExpression(expression);
   if (actual.token !== expected.token) {
-    console.warn('EXPECTED: ' + expected.token + ' ACTUAL: ' + actual.token);
+    console.warn(`EXPECTED: ${expected} | ACTUAL: ${actual}`);
   }
 }
 
-function assertParserEqual(expression: string, expected: string) {
-  const actual = parseTokensToTerms(tokenizer(expression))
-    .map((term) => term.token)
-    .join(' ');
-  if (actual !== expected) {
-    console.warn('EXPECTED: ' + expected + ' ACTUAL: ' + actual);
-  }
+function assertParserEqual(contents: string, expected: string) {
+  assertArrayEqual(contents, expected, (contents) => {
+    return parseTokensToTerms(tokenizer(contents)).map((term) => term.token);
+  });
 }
 
 function assertEvaluationEqual(contents: string, expected: number) {
-  const actual = evaluate(contents);
-  if (actual !== expected) {
-    console.warn(contents + ' | EXPECTED: ' + expected + ' ACTUAL: ' + actual);
-  }
+  assertEqual(contents, expected, evaluate);
 }
 
-function assertTokenizerEqual(contents: string, expected: Token[]) {
-  const actual = tokenizer(contents);
-  if (actual.toString() !== expected.toString()) {
-    console.warn(contents + ' | EXPECTED: ' + expected + ' ACTUAL: ' + actual);
+function assertTokenizerEqual(contents: string, expected: string) {
+  assertArrayEqual(contents, expected, tokenizer);
+}
+
+function assertArrayEqual<T>(
+  contents: string,
+  expected: string,
+  fn: (contents: string) => T[]
+) {
+  assertEqual(contents, expected, (contents) => fn(contents).join(' '));
+}
+
+function assertEqual<T>(
+  contents: string,
+  expected: T,
+  fn: (contents: string) => T
+) {
+  const actual = fn(contents);
+  if (`${actual}` !== `${expected}`) {
+    console.warn(`${contents} | EXPECTED: ${expected} | ACTUAL: ${actual}`);
   }
 }
 
@@ -73,11 +83,12 @@ export function runEvaluatorTests() {
     assertEvaluationEqual('2 + 3 * 9 - 21 * 3 * 5 * 4', -1231);
     assertEvaluationEqual('2 + 3 * 9 + 8 + 10 + 21 * 3 * 10 - 5 * 4', 657);
 
-    assertTokenizerEqual('3 * 4 + 5', ['3', '*', '4', '+', '5']);
-    assertTokenizerEqual('3*4+5', ['3', '*', '4', '+', '5']);
-    assertTokenizerEqual('(3+4)', ['(', '3', '+', '4', ')']);
-    assertTokenizerEqual('36', ['36']);
-    assertTokenizerEqual('(36+42)', ['(', '36', '+', '42', ')']);
+    assertTokenizerEqual('3 * 4 + 5', '3 * 4 + 5');
+    assertTokenizerEqual('3*4+5', '3 * 4 + 5');
+    assertTokenizerEqual('(3+4)', '( 3 + 4 )');
+    assertTokenizerEqual('36', '36');
+    assertTokenizerEqual('(36 + 42)', '( 36 + 42 )');
+
     console.log('Completed Tests');
   } catch (e) {
     console.error('Uncaught exception', e);
