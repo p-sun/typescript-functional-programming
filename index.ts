@@ -1,4 +1,4 @@
-import { runEvaluatorTests } from './src/MathEvaluator/EvaluatorTests';
+import runEvaluatorTests from './src/MathEvaluator/EvaluatorTests';
 
 runEvaluatorTests();
 

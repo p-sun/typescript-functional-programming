@@ -177,16 +177,16 @@ export default function tokenizer(contents: string): Token[] {
   const allParsers = OR_Parser(
     parenthesisParser,
     OR_Parser(opParser, digitParser)
-  );
+  ); // TODO remove while loop
 
   let tokens = new Array<string>();
   let result = allParsers(buffer);
   while (result) {
     if (result) {
-      if (result.data.tag === 'error') {
-        throw new Error('No Parser exist: ' + result.data.message);
-      } else {
+      if (result.data.tag === 'value') {
         tokens.push(result.data.value);
+      } else {
+        throw new Error('No Parser exist: ' + result.data.message);
       }
     }
     result = allParsers(buffer);
