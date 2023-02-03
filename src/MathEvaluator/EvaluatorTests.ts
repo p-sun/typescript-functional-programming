@@ -57,7 +57,7 @@ export function runEvaluatorTests() {
     assertParserEqual('( 3 * 4 + 5 )', '3 4 * 5 +');
     assertParserEqual('( 2 + 3 * 5 ) * 4', '2 3 5 * + 4 *');
     assertParserEqual('( 2 / ( 3 + 1 ) )', '2 3 1 + /');
-    // assertParserEqual('2 + 3 * 9 - 21', '2 3 9 * + 21 -');
+    assertParserEqual('2 + 3 * 9 - 21', '2 3 9 * + 21 -');
 
     assertEvaluationEqual('4 + 2 * 3', 10);
     assertEvaluationEqual('4 * 2 + 3', 11);
@@ -69,14 +69,15 @@ export function runEvaluatorTests() {
     assertEvaluationEqual('( 2 / ( 3 + 1 ) )', 0.5);
     assertEvaluationEqual('( 3 * 4 + 5 )', 17);
     assertEvaluationEqual('2 * 1 + 2 * ( 3 * 4 + 5 )', 36);
-    // assertEvaluationEqual('( ( 2 + 3 ) * ( 9 - 21 * 3 ) * 5 ) * 4', -5400);
-    // assertEvaluationEqual('2 + 3 * 9 - 21 * 3 * 5 * 4', -1231);
-    // assertEvaluationEqual('2 + 3 * 9 + 8 + 10 + 21 * 3 * 10 - 5 * 4', 657);
+    assertEvaluationEqual('( ( 2 + 3 ) * ( 9 - 21 * 3 ) * 5 ) * 4', -5400);
+    assertEvaluationEqual('2 + 3 * 9 - 21 * 3 * 5 * 4', -1231);
+    assertEvaluationEqual('2 + 3 * 9 + 8 + 10 + 21 * 3 * 10 - 5 * 4', 657);
 
     assertTokenizerEqual('3 * 4 + 5', ['3', '*', '4', '+', '5']);
     assertTokenizerEqual('3*4+5', ['3', '*', '4', '+', '5']);
     assertTokenizerEqual('(3+4)', ['(', '3', '+', '4', ')']);
-    // assertTokenizerEqual('(36+42)', ['(', '32', '+', '42', ')']);
+    assertTokenizerEqual('36', ['36']);
+    assertTokenizerEqual('(36+42)', ['(', '36', '+', '42', ')']);
     console.log('Completed Tests');
   } catch (e) {
     console.error('Uncaught exception', e);

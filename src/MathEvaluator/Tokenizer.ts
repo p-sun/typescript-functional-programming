@@ -91,37 +91,105 @@ function OR_Parser<S, T>(p1: Parser<S>, p2: Parser<T>): Parser<S | T> {
     return p1(buffer)?.errorThen((error1) => {
       buffer.unget();
       return p2(buffer)?.errorThen((error2) => {
+        buffer.unget();
         return error1;
       });
     });
   };
 }
 
+// Not used. Just an academic exploration.
+function REPEAT_TWICE_Parser<T>(
+  parser: Parser<T>,
+  join: (value1: T, value2: T) => T
+): Parser<T> {
+  return (buffer: TextBuffer) => {
+    return parser(buffer)?.then((value1) => {
+      return parser(buffer)?.then((value2) => {
+        return ParseResult.MakeValue(join(value1, value2));
+      });
+    });
+  };
+}
+
+// Continue parsing until you can't parse anymore.
+// i.e. Match 1 or more, like the '+' in regex.
+function REPEAT_Parser<T>(
+  parser: Parser<T>,
+  join: (value1: T, value2: T) => T
+): Parser<T> {
+  return (buffer: TextBuffer) => {
+    let combined: T | undefined; // Combined value from all parsers
+    let result: ParseResult<T> | undefined;
+    do {
+      result = parser(buffer);
+      result
+        ?.then((newVal) => {
+          combined = combined === undefined ? newVal : join(combined, newVal);
+          return result;
+        })
+        ?.catch((message) => {
+          buffer.unget();
+        });
+    } while (result && result.data.tag === 'value');
+
+    return combined ? ParseResult.MakeValue(combined) : result;
+  };
+}
+
 const buffer0 = new TextBuffer('Hello World');
-const r = parseChars(['M'])(buffer0)?.catch((message) => {
-  console.log('catch msg');
+const r0 = parseChars(['M'])(buffer0)?.catch((message) => {
+  console.log('catch msg: ' + message);
 });
-console.log(`***** parse with error: ${r}`);
+console.log(`***** parse with error 0: ${r0}`);
+
+const concatStrings = (str1: string, str2: string) => str1 + str2;
 
 let buffer = new TextBuffer('Hello World');
+let result: ParseResult<any> | undefined;
 const H_parser = parseChars(['H']);
 const e_parser = parseChars(['e']);
 const M_parser = parseChars(['M']);
 
-const r1 = AND_Parser(H_parser, e_parser)(buffer);
-console.log(`***** parse AND result: ${r1}`);
+result = AND_Parser(H_parser, e_parser)(buffer);
+console.log(`***** parse AND result 1: ${result} | next: ${buffer.get(3)}`); // [H, e], Next: llo
 
 buffer = new TextBuffer('Hello World');
-const r2 = OR_Parser(H_parser, e_parser)(buffer);
-console.log(`***** parse OR result: ${r2}`);
+result = OR_Parser(H_parser, e_parser)(buffer);
+console.log(`***** parse result 2: ${result}`); // H
 
 buffer = new TextBuffer('Hello World');
-const r3 = OR_Parser(e_parser, H_parser)(buffer);
-console.log(`***** parse OR result 2: ${r3}`);
+result = OR_Parser(e_parser, H_parser)(buffer);
+console.log(`***** parse result 3: ${result}`); // H
 
 buffer = new TextBuffer('Hello World');
-const r4 = OR_Parser(M_parser, e_parser)(buffer);
-console.log(`***** parse OR result 3: ${r4}`);
+result = OR_Parser(M_parser, e_parser)(buffer);
+console.log(`***** parse result 4: ${result} | next: ${buffer.get(3)}`); // M error, Next: Hel
+
+buffer = new TextBuffer('HHHello World');
+result = REPEAT_TWICE_Parser(H_parser, concatStrings)(buffer); // H{2}
+console.log(`***** parse result 5: ${result}`); // HH
+
+buffer = new TextBuffer('HHHello World');
+const repeatH_Parser = REPEAT_Parser(H_parser, concatStrings); // H+
+result = repeatH_Parser(buffer);
+console.log(`***** parse result 6: ${result}`); // HHH
+
+buffer = new TextBuffer('ello World');
+result = repeatH_Parser(buffer);
+console.log(`***** parse result 6.1: ${result} | next: ${buffer.get(3)}`); // e error, Next: ell
+
+buffer = new TextBuffer('ello World');
+const r7 = OR_Parser(repeatH_Parser, e_parser)(buffer); // (H+|e)
+console.log(`***** parse result 7: ${r7}`); // e
+
+buffer = new TextBuffer('HHHello World');
+const r8 = OR_Parser(repeatH_Parser, e_parser)(buffer); // (H+|e)
+console.log(`***** parse result 8: ${r8}`); // HHH
+
+buffer = new TextBuffer('HHHello World');
+const r9 = AND_Parser(repeatH_Parser, e_parser)(buffer); // H+e
+console.log(`***** parse result 9: ${r9}`); // [HHH, e]
 
 function parseChars(chars: Array<string>): Parser<string> {
   const set = new Set(chars);
@@ -142,10 +210,14 @@ function parseChars(chars: Array<string>): Parser<string> {
 export default function tokenizer(contents: string): Token[] {
   const whitespaceRemoved = contents.replace(/\s/g, '');
   let buffer = new TextBuffer(whitespaceRemoved);
+  const concatStrings = (str1: string, str2: string) => str1 + str2;
 
   const parenthesisParser = parseChars(['(', ')']);
   const opParser = parseChars(['+', '-', '*', '/']);
-  const digitParser = parseChars(Array.from('0123456789'));
+  const digitParser = REPEAT_Parser(
+    parseChars(Array.from('0123456789')),
+    concatStrings
+  );
   const allParsers = OR_Parser(
     parenthesisParser,
     OR_Parser(opParser, digitParser)
