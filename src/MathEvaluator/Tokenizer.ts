@@ -38,16 +38,16 @@ class ParseResult<T> {
       | { tag: 'error'; message: string }
   ) {}
 
-  toString() {
-    return JSON.stringify(this.data);
-  }
-
-  static value<T>(value: T) {
+  static MakeValue<T>(value: T) {
     return new ParseResult({ tag: 'value', value });
   }
 
-  static error<T>(message: string) {
+  static MakeError<T>(message: string) {
     return new ParseResult<T>({ tag: 'error', message });
+  }
+
+  toString() {
+    return JSON.stringify(this.data);
   }
 
   then<U>(
@@ -56,7 +56,7 @@ class ParseResult<T> {
     if (this.data.tag === 'value') {
       return fn(this.data.value);
     }
-    return new ParseResult<U>({ tag: 'error', message: this.data.message });
+    return ParseResult.MakeError(this.data.message);
   }
 
   errorThen<U>(fn: (result: this) => ParseResult<T | U> | undefined) {
@@ -80,10 +80,7 @@ function AND_Parser<S, T>(p1: Parser<S>, p2: Parser<T>): Parser<[S, T]> {
   return (buffer: TextBuffer) => {
     return p1(buffer)?.then((value1) => {
       return p2(buffer)?.then((value2) => {
-        return new ParseResult({
-          tag: 'value',
-          value: [value1, value2],
-        });
+        return ParseResult.MakeValue([value1, value2]);
       });
     });
   };
@@ -133,9 +130,9 @@ function parseChars(chars: Array<string>): Parser<string> {
     if (l === undefined) {
       return undefined;
     } else if (set.has(l)) {
-      return ParseResult.value(l);
+      return ParseResult.MakeValue(l);
     } else {
-      return ParseResult.error(
+      return ParseResult.MakeError(
         `Expected letter from set '${chars}' but got '${l}'`
       );
     }
