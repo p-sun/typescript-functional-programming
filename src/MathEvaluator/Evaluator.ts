@@ -1,5 +1,5 @@
 import Term from './Term';
-import tokenizer from './Tokenizer';
+import mathTokenizer from './Tokenizer';
 import parseTokensToTerms from './TokensParser';
 
 /*
@@ -24,7 +24,7 @@ export type Expression = Term[];
 
 export function evaluate(contents: string): number {
   return evaluateExpression(
-    parseTokensToTerms(tokenizer(contents))
+    parseTokensToTerms(mathTokenizer(contents))
   ).GetNumber();
 }
 

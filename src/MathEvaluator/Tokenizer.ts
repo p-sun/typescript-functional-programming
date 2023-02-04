@@ -129,7 +129,8 @@ export function Repeat_Parser<T, U>(
   };
 }
 
-export function parseChars(chars: Array<string>): Parser<string> {
+// Like `AA|BB|CC` or `[AA|BB|CC]` in regex
+export function matchChars(chars: Array<string>): Parser<string> {
   const set = new Set(chars);
   return (buffer: TextBuffer, unwindIndex: number) => {
     const l = buffer.get();
@@ -144,15 +145,15 @@ export function parseChars(chars: Array<string>): Parser<string> {
   };
 }
 
-export default function tokenizer(contents: string): Token[] {
+export default function mathTokenizer(contents: string): Token[] {
   const whitespaceRemoved = contents.replace(/\s/g, '');
   let buffer = new TextBuffer(whitespaceRemoved);
   const concatStrings = (acc: string, string: string) => acc + string;
   const arrayifyStrings = (acc: string[], string: string) => [...acc, string];
-  const parenthesisParser = parseChars(['(', ')']); // \(|\)
-  const opParser = parseChars(['+', '-', '*', '/']); // (\+|-|\*|\/)
+  const parenthesisParser = matchChars(['(', ')']); // \(|\)
+  const opParser = matchChars(['+', '-', '*', '/']); // (\+|-|\*|\/)
   const digitParser = Repeat_Parser(
-    parseChars(Array.from('0123456789')),
+    matchChars(Array.from('0123456789')),
     concatStrings,
     ''
   ); // \d+

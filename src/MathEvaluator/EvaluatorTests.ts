@@ -1,9 +1,9 @@
 import { evaluateExpression, evaluate, Expression } from './Evaluator';
 import Term from './Term';
-import tokenizer, {
+import mathTokenizer, {
   And_Parser,
   Or_Parser,
-  parseChars,
+  matchChars,
   Repeat_Parser,
   TextBuffer,
   type Parser,
@@ -79,9 +79,9 @@ function runParserCombinatorTests() {
 
   const concatStrings = (str1: string, str2: string) => str1 + str2;
 
-  const H = parseChars(['H']);
-  const e = parseChars(['e']);
-  const R = parseChars(['R']);
+  const H = matchChars(['H']);
+  const e = matchChars(['e']);
+  const R = matchChars(['R']);
 
   const repeatH = Repeat_Parser(H, concatStrings, ''); // H+
 
@@ -126,12 +126,14 @@ function runParserCombinatorTests() {
 }
 
 function assertTokenizerEqual(contents: string, expected: string) {
-  assertArrayEqual(contents, expected, tokenizer);
+  assertArrayEqual(contents, expected, mathTokenizer);
 }
 
 function assertParseTermsEqual(contents: string, expected: string) {
   assertArrayEqual(contents, expected, (contents) => {
-    return parseTokensToTerms(tokenizer(contents)).map((term) => term.token);
+    return parseTokensToTerms(mathTokenizer(contents)).map(
+      (term) => term.token
+    );
   });
 }
 
