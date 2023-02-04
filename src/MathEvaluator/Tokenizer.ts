@@ -148,32 +148,28 @@ export default function tokenizer(contents: string): Token[] {
   const whitespaceRemoved = contents.replace(/\s/g, '');
   let buffer = new TextBuffer(whitespaceRemoved);
   const concatStrings = (acc: string, string: string) => acc + string;
-  const parenthesisParser = parseChars(['(', ')']);
-  const opParser = parseChars(['+', '-', '*', '/']);
+  const arrayifyStrings = (acc: string[], string: string) => [...acc, string];
+  const parenthesisParser = parseChars(['(', ')']); // \(|\)
+  const opParser = parseChars(['+', '-', '*', '/']); // (\+|-|\*|\/)
   const digitParser = Repeat_Parser(
     parseChars(Array.from('0123456789')),
     concatStrings,
     ''
-  );
-  const allParsers = Or_Parser(
+  ); // \d+
+  const tokenParser = Or_Parser(
     parenthesisParser,
     Or_Parser(opParser, digitParser)
-  ); // TODO: remove while loop
+  ); // [\(|\)]|[\+|-|\*|\/]|\d+
+  const repeatAllParsers = Repeat_Parser(tokenParser, arrayifyStrings, []); // ([\(|\)]|[\+|-|\*|\/]|\d+)+
 
-  let tokens = new Array<string>();
   let unwindIndex = buffer.unwindIndex;
-  let result = allParsers(buffer, unwindIndex);
-  while (result) {
-    if (result) {
-      if (result.data.tag === 'value') {
-        tokens.push(result.data.value);
-      } else {
-        throw new Error('No Parser exist: ' + result.data.message);
-      }
+  let result = repeatAllParsers(buffer, unwindIndex);
+  if (result) {
+    if (result.data.tag === 'value') {
+      return result.data.value;
+    } else {
+      return [`Tokenizer error: ${result.data.message}`];
     }
-    unwindIndex = buffer.unwindIndex;
-    result = allParsers(buffer, unwindIndex);
   }
-
-  return tokens;
+  return ['Tokenizer error: Result is empty.'];
 }
