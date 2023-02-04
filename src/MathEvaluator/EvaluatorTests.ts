@@ -4,9 +4,9 @@ import mathTokenizer, {
   And_Parser,
   Or_Parser,
   matchChars,
-  Repeat_Parser,
   TextBuffer,
   type Parser,
+  RepeatToString_Parser,
 } from './Tokenizer';
 import parseTokensToTerms from './TokensParser';
 
@@ -77,13 +77,11 @@ function runParserCombinatorTests() {
   const HHHelloWorld = 'HHHello World';
   const elloWorld = 'ello World';
 
-  const concatStrings = (str1: string, str2: string) => str1 + str2;
-
   const H = matchChars(['H']);
   const e = matchChars(['e']);
   const R = matchChars(['R']);
 
-  const repeatH = Repeat_Parser(H, concatStrings, ''); // H+
+  const repeatH = RepeatToString_Parser(H); // H+
 
   assertParseResult(HelloWorld, `H,e`, 'llo', And_Parser(H, e)); // He
   assertParseResult(HelloWorld, 'H', 'ell', Or_Parser(H, e)); // H|e

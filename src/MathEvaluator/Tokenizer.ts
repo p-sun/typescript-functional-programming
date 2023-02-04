@@ -100,9 +100,20 @@ export function Or_Parser<S, T>(p1: Parser<S>, p2: Parser<T>): Parser<S | T> {
   };
 }
 
-// Continue parsing until you can't parse anymore.
+export function RepeatToArray_Parser<T>(parser: Parser<T>): Parser<T[]> {
+  const arrayify = (acc: T[], currentVal: T) => [...acc, currentVal];
+  return Repeat_Parser<T, T[]>(parser, arrayify, []);
+}
+
 // i.e. Match 1 or more, like the '+' in regex.
-export function Repeat_Parser<T, U>(
+export function RepeatToString_Parser(parser: Parser<string>): Parser<string> {
+  const concatStrings = (acc: string, currentVal: string) => acc + currentVal;
+  return Repeat_Parser(parser, concatStrings, '');
+}
+
+// Continue parsing until you can't parse anymore.
+// Reduce values with the reducer function.
+function Repeat_Parser<T, U>(
   parser: Parser<T>,
   reducer: (previousValue: U, currentValue: T) => U,
   reducerInitialValue: U
@@ -145,23 +156,19 @@ export function matchChars(chars: Array<string>): Parser<string> {
 export default function mathTokenizer(contents: string): Token[] {
   const whitespaceRemoved = contents.replace(/\s/g, '');
   let buffer = new TextBuffer(whitespaceRemoved);
-  const concatStrings = (acc: string, string: string) => acc + string;
-  const arrayifyStrings = (acc: string[], string: string) => [...acc, string];
   const parenthesisParser = matchChars(['(', ')']); // \(|\)
   const opParser = matchChars(['+', '-', '*', '/']); // (\+|-|\*|\/)
-  const digitParser = Repeat_Parser(
-    matchChars(Array.from('0123456789')),
-    concatStrings,
-    ''
+  const digitsParser = RepeatToString_Parser(
+    matchChars(Array.from('0123456789'))
   ); // \d+
   const tokenParser = Or_Parser(
     parenthesisParser,
-    Or_Parser(opParser, digitParser)
+    Or_Parser(opParser, digitsParser)
   ); // [\(|\)]|[\+|-|\*|\/]|\d+
-  const repeatAllParsers = Repeat_Parser(tokenParser, arrayifyStrings, []); // ([\(|\)]|[\+|-|\*|\/]|\d+)+
+  const tokenArrayParser = RepeatToArray_Parser(tokenParser); // ([\(|\)]|[\+|-|\*|\/]|\d+)+
 
   let unwindIndex = buffer.unwindIndex;
-  let result = repeatAllParsers(buffer, unwindIndex);
+  let result = tokenArrayParser(buffer, unwindIndex);
   if (result) {
     if (result.data.tag === 'value') {
       return result.data.value;
