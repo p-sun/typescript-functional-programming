@@ -83,7 +83,7 @@ function runParserCombinatorTests() {
   const e = parseChars(['e']);
   const R = parseChars(['R']);
 
-  const repeatH = Repeat_Parser(H, concatStrings); // H+
+  const repeatH = Repeat_Parser(H, concatStrings, ''); // H+
 
   assertParseResult(HelloWorld, `H,e`, 'llo', And_Parser(H, e)); // He
   assertParseResult(HelloWorld, 'H', 'ell', Or_Parser(H, e)); // H|e

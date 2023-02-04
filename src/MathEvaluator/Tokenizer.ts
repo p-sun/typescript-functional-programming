@@ -102,22 +102,30 @@ export function Or_Parser<S, T>(p1: Parser<S>, p2: Parser<T>): Parser<S | T> {
 
 // Continue parsing until you can't parse anymore.
 // i.e. Match 1 or more, like the '+' in regex.
-export function Repeat_Parser<T>(
+export function Repeat_Parser<T, U>(
   parser: Parser<T>,
-  join: (value1: T, value2: T) => T
-): Parser<T> {
+  reducer: (previousValue: U, currentValue: T) => U,
+  reducerInitialValue: U
+): Parser<U> {
   return (buffer: TextBuffer, unwindIndex: number) => {
-    let combined: T | undefined; // Combined value from all parsers
+    let combined: U | undefined; // Combined value from all parsers
     let result: ParseResult<T> | undefined;
     do {
       result = parser(buffer, buffer.unwindIndex);
+      // TODO. Inline this `then` method changes logic,
+      // b/c we want result to be unchanged
       result?.then((newVal) => {
-        combined = combined === undefined ? newVal : join(combined, newVal);
+        const acc = combined ? combined : reducerInitialValue;
+        combined = reducer(acc, newVal);
         return result;
       });
     } while (result && result.data.tag === 'value');
 
-    return combined ? ParseResult.MakeValue(combined) : result;
+    if (combined) {
+      return ParseResult.MakeValue(combined);
+    } else if (result && result.data.tag === 'error') {
+      return ParseResult.MakeError(result.data.message);
+    }
   };
 }
 
@@ -139,13 +147,13 @@ export function parseChars(chars: Array<string>): Parser<string> {
 export default function tokenizer(contents: string): Token[] {
   const whitespaceRemoved = contents.replace(/\s/g, '');
   let buffer = new TextBuffer(whitespaceRemoved);
-  const concatStrings = (str1: string, str2: string) => str1 + str2;
-
+  const concatStrings = (acc: string, string: string) => acc + string;
   const parenthesisParser = parseChars(['(', ')']);
   const opParser = parseChars(['+', '-', '*', '/']);
   const digitParser = Repeat_Parser(
     parseChars(Array.from('0123456789')),
-    concatStrings
+    concatStrings,
+    ''
   );
   const allParsers = Or_Parser(
     parenthesisParser,
