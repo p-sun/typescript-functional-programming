@@ -5,6 +5,10 @@ export class TextBuffer {
 
   constructor(private readonly contents: string) {}
 
+  get unwindIndex() {
+    return this.offset;
+  }
+
   get(length: number = 1) {
     const start = this.offset;
     if (start + length <= this.contents.length) {
@@ -16,11 +20,10 @@ export class TextBuffer {
     return undefined;
   }
 
-  unget(length: number = 1) {
-    this.offset = Math.max(0, this.offset - length);
-  }
-
   seek(pos: number) {
+    if (pos === this.offset) {
+      return;
+    }
     if (pos >= 0 && pos < this.contents.length) {
       this.offset = pos;
     } else {
@@ -67,45 +70,30 @@ export class ParseResult<T> {
     }
     return this;
   }
-
-  catch(fn: (message: string) => void): this {
-    if (this.data.tag === 'error') {
-      fn(this.data.message);
-    }
-    return this;
-  }
 }
 
-export type Parser<T> = (buffer: TextBuffer) => ParseResult<T> | undefined;
+export type Parser<T> = (
+  buffer: TextBuffer,
+  unwindIndex: number // Where to unwind to if Parser fails
+) => ParseResult<T> | undefined;
 
 export function And_Parser<S, T>(
   p1: Parser<S>,
   p2: Parser<T>
 ): Parser<(S | T)[]> {
-  return (buffer: TextBuffer) => {
-    return p1(buffer)
-      ?.then((value1) => {
-        return p2(buffer)
-          ?.then((value2) => {
-            return ParseResult.MakeValue([value1, value2]);
-          })
-          ?.catch((msg) => {
-            buffer.unget();
-          });
-      })
-      ?.catch((msg) => {
-        // TODO: Cleanup unwinding
-        buffer.unget();
+  return (buffer: TextBuffer, unwindIndex: number) => {
+    return p1(buffer, unwindIndex)?.then((value1) => {
+      return p2(buffer, unwindIndex)?.then((value2) => {
+        return ParseResult.MakeValue([value1, value2]);
       });
+    });
   };
 }
 
 export function Or_Parser<S, T>(p1: Parser<S>, p2: Parser<T>): Parser<S | T> {
-  return (buffer: TextBuffer) => {
-    return p1(buffer)?.errorThen((error1) => {
-      buffer.unget();
-      return p2(buffer)?.errorThen((error2) => {
-        buffer.unget();
+  return (buffer: TextBuffer, unwindIndex: number) => {
+    return p1(buffer, unwindIndex)?.errorThen((error1) => {
+      return p2(buffer, unwindIndex)?.errorThen((error2) => {
         return error1;
       });
     });
@@ -118,19 +106,15 @@ export function Repeat_Parser<T>(
   parser: Parser<T>,
   join: (value1: T, value2: T) => T
 ): Parser<T> {
-  return (buffer: TextBuffer) => {
+  return (buffer: TextBuffer, unwindIndex: number) => {
     let combined: T | undefined; // Combined value from all parsers
     let result: ParseResult<T> | undefined;
     do {
-      result = parser(buffer);
-      result
-        ?.then((newVal) => {
-          combined = combined === undefined ? newVal : join(combined, newVal);
-          return result;
-        })
-        ?.catch((msg) => {
-          buffer.unget();
-        });
+      result = parser(buffer, buffer.unwindIndex);
+      result?.then((newVal) => {
+        combined = combined === undefined ? newVal : join(combined, newVal);
+        return result;
+      });
     } while (result && result.data.tag === 'value');
 
     return combined ? ParseResult.MakeValue(combined) : result;
@@ -139,13 +123,14 @@ export function Repeat_Parser<T>(
 
 export function parseChars(chars: Array<string>): Parser<string> {
   const set = new Set(chars);
-  return (buffer) => {
+  return (buffer: TextBuffer, unwindIndex: number) => {
     const l = buffer.get();
     if (l === undefined) {
       return undefined;
     } else if (set.has(l)) {
       return ParseResult.MakeValue(l);
     } else {
+      buffer.seek(unwindIndex);
       return ParseResult.MakeError(`Expected '${chars}' but got '${l}'`);
     }
   };
@@ -168,7 +153,8 @@ export default function tokenizer(contents: string): Token[] {
   ); // TODO: remove while loop
 
   let tokens = new Array<string>();
-  let result = allParsers(buffer);
+  let unwindIndex = buffer.unwindIndex;
+  let result = allParsers(buffer, unwindIndex);
   while (result) {
     if (result) {
       if (result.data.tag === 'value') {
@@ -177,7 +163,8 @@ export default function tokenizer(contents: string): Token[] {
         throw new Error('No Parser exist: ' + result.data.message);
       }
     }
-    result = allParsers(buffer);
+    unwindIndex = buffer.unwindIndex;
+    result = allParsers(buffer, unwindIndex);
   }
 
   return tokens;

@@ -9,18 +9,4 @@ describe('test TextBuffer', () => {
     expect(buffer.get()).toBe('');
     expect(buffer.get()).toBe('');
   });
-
-  it('should UNGET the right number of chars', () => {
-    const buffer = new TextBuffer('abcde');
-    expect(buffer.get(6)).toBe('abcde');
-
-    buffer.unget(6);
-    expect(buffer.get(3)).toBe('abc');
-
-    buffer.unget(2);
-    expect(buffer.get(3)).toBe('bcd');
-
-    buffer.unget();
-    expect(buffer.get()).toBe('d');
-  });
 });

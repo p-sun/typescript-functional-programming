@@ -86,14 +86,14 @@ function runParserCombinatorTests() {
   const repeatH = Repeat_Parser(H, concatStrings); // H+
 
   assertParseResult(HelloWorld, `H,e`, 'llo', And_Parser(H, e)); // He
-  assertParseResult(HelloWorld, 'H', 'ell', Or_Parser(H, e)); // (H|e)
-  assertParseResult(HelloWorld, 'H', 'ell', Or_Parser(e, H)); // (e|H)
+  assertParseResult(HelloWorld, 'H', 'ell', Or_Parser(H, e)); // H|e
+  assertParseResult(HelloWorld, 'H', 'ell', Or_Parser(e, H)); // e|H
   assertParseResult(
     HelloWorld,
     `Expected 'R' but got 'H'`,
     'Hel',
     Or_Parser(R, e)
-  ); // (M|e)
+  ); // M|e
   assertParseResult(
     HelloWorld,
     `Expected 'R' but got 'H'`,
@@ -114,9 +114,15 @@ function runParserCombinatorTests() {
   ); // HR
   assertParseResult(HHHelloWorld, `HHH`, 'ell', repeatH); // H+
   assertParseResult(elloWorld, `Expected 'H' but got 'e'`, 'ell', repeatH); // H+
-  assertParseResult(elloWorld, `e`, 'llo', Or_Parser(repeatH, e)); // (H+|e)
-  assertParseResult(HHHelloWorld, `HHH`, 'ell', Or_Parser(repeatH, e)); // (H+|e)
+  assertParseResult(elloWorld, `e`, 'llo', Or_Parser(repeatH, e)); // H+|e
+  assertParseResult(HHHelloWorld, `HHH`, 'ell', Or_Parser(repeatH, e)); // H+|e
   assertParseResult(HHHelloWorld, `HHH,e`, 'llo', And_Parser(repeatH, e)); // H+e
+  assertParseResult(
+    elloWorld,
+    `Expected 'H' but got 'e'`,
+    'ell',
+    And_Parser(repeatH, e)
+  ); // H+e
 }
 
 function assertTokenizerEqual(contents: string, expected: string) {
@@ -147,7 +153,7 @@ function assertParseResult<T>(
   parser: Parser<T>
 ) {
   let buffer = new TextBuffer(contents);
-  let result = parser(buffer);
+  let result = parser(buffer, 0);
 
   assertEqual(contents, expectedValue, () => {
     if (result?.data.tag === 'value') {
