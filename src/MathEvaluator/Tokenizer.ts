@@ -112,13 +112,10 @@ export function Repeat_Parser<T, U>(
     let result: ParseResult<T> | undefined;
     do {
       result = parser(buffer, buffer.unwindIndex);
-      // TODO. Inline this `then` method changes logic,
-      // b/c we want result to be unchanged
-      result?.then((newVal) => {
+      if (result && result.data.tag === 'value') {
         const acc = combined ? combined : reducerInitialValue;
-        combined = reducer(acc, newVal);
-        return result;
-      });
+        combined = reducer(acc, result.data.value);
+      }
     } while (result && result.data.tag === 'value');
 
     if (combined) {
