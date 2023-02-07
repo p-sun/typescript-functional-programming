@@ -54,3 +54,23 @@ const h = new Hamburger();
 // h.#hCheese // Not allowed
 // h['#hCheese'] // Not allowed
 // (h as any).#hCheese; // Not Allowed
+
+/* -------------------------------------------------------------------------- */
+/*                  Make a sandwhich with `map` and `reduce`                  */
+/* -------------------------------------------------------------------------- */
+
+// Step 1: Start with an array of ingredients.
+const items = ['🥬', '🍅', '🧀'];
+
+// Step 2: Slice all the items.
+// Use `map` to perform an action on every item.
+// ['sliced 🥬', 'sliced 🍅', 'sliced 🧀'];
+const slicedItems = items.map((item) => `sliced ${item}`);
+
+// Step 3: Assemble a sandwhich.
+// Use `reduce` to combine multiple items into one item.
+// 'MY SANDWHICH: sliced 🥬 | sliced 🍅 | sliced 🧀 |'
+const sandwhich = slicedItems.reduce(
+  (sandwhich, item) => `${sandwhich} ${item} | `,
+  'MY SANDWHICH: '
+);
