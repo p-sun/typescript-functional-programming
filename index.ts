@@ -1,6 +1,10 @@
 import runEvaluatorTests from './src/MathEvaluator/EvaluatorTests';
+import runPromises from './src/TypeScriptLanguage/Promises';
+import runMyPromisesTests from './src/TypeScriptLanguage/__tests/MyPromiseTests';
 
-runEvaluatorTests();
+runMyPromisesTests();
+// runPromises();
+// runEvaluatorTests();
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
