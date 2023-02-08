@@ -5,7 +5,7 @@
 // then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): Promise<TResult1 | TResult2>;
 type ResolveListener<T, S> = (value: T) => S | MyPromise<S>;
 // catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): Promise<T | TResult>;
-type RejectListener = (err: unknown) => void;
+type RejectListener<S> = (err: unknown) => S | MyPromise<S>;
 
 export class MyPromise<T> {
   private result:
@@ -14,7 +14,7 @@ export class MyPromise<T> {
     | { tag: 'pending' } = { tag: 'pending' };
 
   private resolveListeners: ResolveListener<T, unknown>[] = [];
-  private rejectListeners: RejectListener[] = [];
+  private rejectListeners: RejectListener<unknown>[] = [];
 
   constructor(
     fn: (
@@ -39,7 +39,17 @@ export class MyPromise<T> {
       },
       // Define reject function
       (error) => {
-        this._rejectListeners(error);
+        if (error instanceof MyPromise) {
+          error
+            .then((awaitedVal: T) => {
+              this._resolveListeners(awaitedVal);
+            })
+            .catch((awaitedError) => {
+              this._rejectListeners(awaitedError);
+            });
+        } else {
+          this._rejectListeners(error);
+        }
       }
     );
   }
@@ -54,21 +64,28 @@ export class MyPromise<T> {
           reject(error);
         });
       } else if (this.result.tag === 'error') {
-        return reject(this.result.error);
+        reject(this.result.error);
       } else {
-        return resolve(onfulfilled(this.result.value));
+        resolve(onfulfilled(this.result.value));
       }
     });
   }
 
-  catch(onrejected: RejectListener) {
-    if (this.result.tag === 'pending') {
-      this.rejectListeners.push(onrejected);
-    } else if (this.result.tag === 'error') {
-      onrejected(this.result.error);
-    }
-
-    return this;
+  catch<S>(onrejected: RejectListener<S>): MyPromise<S | T> {
+    return new MyPromise((resolve, reject) => {
+      if (this.result.tag === 'pending') {
+        this.resolveListeners.push((value: T) => {
+          resolve(value);
+        });
+        this.rejectListeners.push((error: unknown) => {
+          reject(onrejected(error));
+        });
+      } else if (this.result.tag === 'error') {
+        reject(onrejected(this.result.error));
+      } else {
+        resolve(this.result.value);
+      }
+    });
   }
 
   _resolveListeners(value: T) {

@@ -145,8 +145,7 @@ aMyPromiseWDelay.then((n) => {
   assertEqual('5 MyPromise | multiple thens B | w delay', 8, n);
 });
 
-// /* ------------------------ Return error as a promise ----------------------- */
-
+/* ------------------- Return error as a promise in `then` ------------------ */
 promise8AfterDelay(0)
   .then((n) => {
     return errorEventually('MyErrorA', 0);
@@ -175,6 +174,54 @@ promise8AfterDelay_mine(710)
   })
   .catch((error) => {
     assertEqual(`6 MyPromise | return MyError | w delay`, 'MyErrorB', error);
+  });
+
+/* -------------------- Return success promise in `catch` ------------------- */
+errorEventually<boolean>('ErrorA', 0)
+  .catch((error) => {
+    return succeedEventually(`${error} -> SuccessA`, 0);
+  })
+  .then((val) => {
+    assertEqual(
+      `7 Promise | success promise in 'catch' | no delay`,
+      'ErrorA -> SuccessA',
+      val
+    );
+  });
+errorEventually_mine<boolean>('ErrorA', 0)
+  .catch((error) => {
+    return succeedEventually_mine(`${error} -> SuccessA`, 0);
+  })
+  .then((val) => {
+    assertEqual(
+      `7 MyPromise | success promise in 'catch' | no delay`,
+      'ErrorA -> SuccessA',
+      val
+    );
+  });
+
+errorEventually<boolean>('ErrorB', 800)
+  .catch((error) => {
+    return succeedEventually(`${error} -> SuccessB`, 30);
+  })
+  .then((val) => {
+    assertEqual(
+      `7 Promise | success promise in 'catch' | w delay`,
+      'ErrorB -> SuccessB',
+      val
+    );
+  });
+
+errorEventually_mine<boolean>('ErrorB', 810)
+  .catch((error) => {
+    return succeedEventually_mine(`${error} -> SuccessB`, 30);
+  })
+  .then((val) => {
+    assertEqual(
+      `7 MyPromise | success promise in 'catch' | w delay`,
+      'ErrorB -> SuccessB',
+      val
+    );
   });
 
 export default function runMyPromiseTests() {}
