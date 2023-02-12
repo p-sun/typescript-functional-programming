@@ -1,15 +1,15 @@
 /* ------------------------------- Simple Then ------------------------------ */
 
 import {
-  promise8AfterDelay,
-  promise8AfterDelay_mine,
   succeedEventually,
   succeedEventually_mine,
   errorEventually,
   errorEventually_mine,
   assertObjEqual,
   assertEqual,
-} from './PromiseTestUtils';
+  promise8AfterDelay,
+  promise8AfterDelay_mine,
+} from './__tests/PromiseTestUtils';
 
 promise8AfterDelay(0).then((n) => {
   assertEqual('1 Promise | no delay', 8, n);

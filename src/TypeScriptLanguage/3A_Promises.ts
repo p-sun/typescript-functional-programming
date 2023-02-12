@@ -2,8 +2,6 @@
 /*                              Without Promises                              */
 /* -------------------------------------------------------------------------- */
 
-import { errorEventually, succeedEventually } from './__tests/PromiseTestUtils';
-
 function average(x: number, y: number): number {
   return (x + y) / 2;
 }
@@ -49,15 +47,6 @@ function averageAllEventually_0(): Promise<number> {
     });
   });
 }
-averageAllEventually_0()
-  .then(
-    // 12.66
-    (avg) => console.log(`averageAllEventually_0(), first 'then()': ${avg}`)
-  )
-  .then(
-    // Undefined b/c previous console.log returned undefined
-    (avg) => console.log(`averageAllEventually_0(), second 'then()' ${avg}`)
-  );
 
 /*
  * 3 Promises start at the same time.
@@ -68,6 +57,10 @@ function averageAllEventually_1(): Promise<number> {
   const y = averageEventually(8, 12, /* ms */ 1000);
   const z = averageEventually(10, 30, /* ms */ 250);
 
+  x.then(() => {
+    return 'hi';
+  }).then((hi) => {});
+
   return x.then((xResult) => {
     return y.then((yResult) => {
       return z.then((zResult) => {
@@ -76,9 +69,6 @@ function averageAllEventually_1(): Promise<number> {
     });
   });
 }
-averageAllEventually_1().then(
-  (avg) => console.log('averageAllEventually_1(): ' + avg) // 12.66
-);
 
 /*
  * 3 Promises start at the same time, using aync await.
@@ -91,87 +81,54 @@ async function averageAllEventually_2(): Promise<number> {
   const z = await averageEventually(10, 30, /* ms */ 250);
   return (x + y + z) / 3;
 }
-averageAllEventually_2().then((avg) =>
-  console.log('averageAllEventually_2(): ' + avg)
-);
+
+/* -------------------------------------------------------------------------- */
+/*                                 Async/Await                                */
+/* -------------------------------------------------------------------------- */
+
+// Same Promise with aync/await and without.
+
+function singlePromise() {
+  return averageEventually(5, 7, /* milliseconds */ 500).then((x) => {
+    console.log('I got: ' + x);
+    return x;
+  });
+}
+async function singlePromiseAsync() {
+  const x = await averageEventually(5, 7, /* milliseconds */ 500);
+  console.log('I got: ' + x);
+  return x;
+}
 
 /* -------------------------------------------------------------------------- */
 /*                              Chaining Promises                             */
 /* -------------------------------------------------------------------------- */
 
-/* ------------------------------- PromisePair ------------------------------ */
+averageAllEventually_0()
+  // avg is 12.66
+  // Return a Promise<number>
+  .then((avg) => {
+    return averageEventually(100, 300, /* ms */ 300);
+  })
+  // avg is 200
+  // Return a Promise<{ averageVal: number }>
+  .then((avg) => {
+    return {
+      averageVal: avg, // avg is 200
+    };
+  })
+  // obj is { averageVal: 200 }
+  // Return undefined
+  .then((obj) =>
+    console.log(`averageAllEventually_0(), third then:' ${JSON.stringify(obj)}`)
+  );
+
 function PromisePair<A, B>(a: Promise<A>, b: Promise<B>): Promise<[A, B]> {
-  Promise.all;
   return a.then((aResult) => {
     return b.then((bResult) => {
       return [aResult, bResult];
     });
   });
 }
-
-PromisePair(
-  succeedEventually(1234, /* ms */ 500),
-  succeedEventually(5678, /* ms */ 1000)
-).then((tuple) => console.log(`PromisePair success: ${tuple}`)); // 1234,5678
-
-PromisePair(
-  succeedEventually(1234, /* ms */ 500),
-  errorEventually('myError', /* ms */ 1000)
-).catch((error) => console.log(`PromisePair error: ${error}`)); // myError
-
-/* --------------------- PromiseAll that takes one type --------------------- */
-function PromiseAll<A>(promises: Promise<A>[]): Promise<A[]> {
-  return new Promise(async (resolve, reject) => {
-    const results: A[] = [];
-    for (const p of promises) {
-      try {
-        results.push(await p);
-      } catch (err) {
-        reject(err);
-        break;
-      }
-    }
-    resolve(results);
-  });
-}
-
-PromiseAll([
-  succeedEventually(1234, /* ms */ 500),
-  succeedEventually(3456, /* ms */ 1000),
-  succeedEventually(5678, /* ms */ 250),
-]).then((array) => console.log(`PromiseAll success: ${array}`));
-
-PromiseAll([
-  succeedEventually(1234, /* ms */ 500),
-  errorEventually('myError', /* ms */ 1000),
-  succeedEventually(3456, /* ms */ 1000),
-]).catch((error) => console.log(`PromiseAll error: ${error}`));
-
-/* --------------------- PromiseAll that takes any type --------------------- */
-// Similar to `Promise.all` in JS.
-function PromiseAllForAnyType(
-  promises: Promise<unknown>[]
-): Promise<unknown[]> {
-  return new Promise(async (resolve, reject) => {
-    const results: unknown[] = [];
-    for (const p of promises) {
-      try {
-        results.push(await p);
-      } catch (err) {
-        reject(err);
-        break;
-      }
-    }
-    resolve(results);
-  });
-}
-
-PromiseAllForAnyType([
-  succeedEventually(1234, /* ms */ 500),
-  succeedEventually('myString', /* ms */ 1000),
-  succeedEventually({ hello: 'world' }, /* ms */ 250),
-]).then((results) =>
-  console.log(`PromiseAllForAnyType success: ${JSON.stringify(results)}`)
-);
 
 export default function runPromises() {}

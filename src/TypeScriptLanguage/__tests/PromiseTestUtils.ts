@@ -1,16 +1,4 @@
-import { MyPromise } from '../MyPromise';
-
-/* -------------------------------------------------------------------------- */
-/*                           Custom Promises to Test                          */
-/* -------------------------------------------------------------------------- */
-
-export function promise8AfterDelay(duration: number): Promise<number> {
-  return succeedEventually(8, duration);
-}
-
-export function promise8AfterDelay_mine(duration: number): MyPromise<number> {
-  return succeedEventually_mine(8, duration);
-}
+import { MyPromise } from '../3B1_MyPromise';
 
 /* -------------------------------------------------------------------------- */
 /*                   Generic Promises for Success and Error                   */
@@ -95,4 +83,16 @@ export function assertObjEqual<T>(id: string, expected: T, actual: T) {
   } else {
     console.log(`====== ${id} | OK: ${actualStr}`);
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                           Custom Promises to Test                          */
+/* -------------------------------------------------------------------------- */
+
+export function promise8AfterDelay(duration: number): Promise<number> {
+  return succeedEventually(8, duration);
+}
+
+export function promise8AfterDelay_mine(duration: number): MyPromise<number> {
+  return succeedEventually_mine(8, duration);
 }
