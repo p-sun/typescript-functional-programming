@@ -1,4 +1,4 @@
-type LongestBranch = { names: string; length: number };
+type LongestBranch = { path: string; length: number };
 
 class TreeNode {
   constructor(readonly name: string, readonly children: TreeNode[]) {}
@@ -17,11 +17,11 @@ class TreeNode {
 
   longestBranch(): LongestBranch {
     if (this.children.length === 0) {
-      return { names: this.name, length: 1 };
+      return { path: this.name, length: 1 };
     }
 
     let longestBranch: LongestBranch = {
-      names: '',
+      path: '',
       length: 0,
     };
     for (let c of this.children) {
@@ -31,7 +31,7 @@ class TreeNode {
       }
     }
     return {
-      names: this.name + longestBranch.names,
+      path: this.name + longestBranch.path,
       length: 1 + longestBranch.length,
     };
   }

@@ -53,7 +53,7 @@ const getLongestBranchPostorder = (tree: Tree) =>
 
 const buildCurrentBranch = (acc: Branch, current: Tree): Branch => ({
   id: current.id,
-  name: acc.name + current.id,
+  path: acc.path + current.id,
   length: acc.length + 1,
 });
 
@@ -65,8 +65,8 @@ const isLeaf = (current: Tree) => current.children.length === 0;
 const getLongerBranch = (a: Branch, b: Branch): Branch =>
   a.length >= b.length ? a : b;
 
-type Branch = { id: string; name: string; length: number };
-const EmptyBranch: Branch = { id: '', name: '', length: 0 };
+type Branch = { id: string; path: string; length: number };
+const EmptyBranch: Branch = { id: '', path: '', length: 0 };
 
 /* -------------------------------------------------------------------------- */
 /*                            Pure Functional Tree                            */

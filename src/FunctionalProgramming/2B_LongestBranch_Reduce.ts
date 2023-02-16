@@ -21,20 +21,18 @@ function longestBranchLength(node: FPTree): number {
 /*        Longest Branch - Easiest FP Way, also accumulating Branch name      */
 /* -------------------------------------------------------------------------- */
 
-type Branch = { name: string; length: number };
+type Branch = { path: string; length: number };
+const EmptyBranch: Branch = { path: '', length: 0 };
 
 function longestBranch(node: FPTree): Branch {
   const helper = (acc: Branch, c: FPTree) => {
     const childBranch = longestBranch(c);
     return childBranch.length > acc.length ? childBranch : acc;
   };
-  const longestChildBranch: Branch = node.children.reduce(helper, {
-    length: 0,
-    name: '',
-  });
+  const longestChildBranch: Branch = node.children.reduce(helper, EmptyBranch);
   return {
     length: 1 + longestChildBranch.length,
-    name: node.id + longestChildBranch.name,
+    path: node.id + longestChildBranch.path,
   };
 }
 
