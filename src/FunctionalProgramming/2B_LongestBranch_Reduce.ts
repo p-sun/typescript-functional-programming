@@ -2,8 +2,6 @@
 /*                       Longest Branch - Easiest FP Way                      */
 /* -------------------------------------------------------------------------- */
 
-import { runPerformanceTest } from './Utils/PerformanceUtils';
-
 type FPTree = {
   id: string;
   children: FPTree[];
@@ -59,7 +57,5 @@ export default function run() {
   console.log('longestBranch B: ', longestBranch(B)); // 2
   console.log('longestBranch C: ', longestBranch(C)); // 1
 
-  runPerformanceTest(100000, () => {
-    longestBranch(A);
-  });
+  longestBranch(A);
 }

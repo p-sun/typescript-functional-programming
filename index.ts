@@ -1,7 +1,7 @@
 import runLongestBranch_ForLoop from './src/FunctionalProgramming/2A_LongestBranch_ForLoop';
 import runLongestBranch_Reduce from './src/FunctionalProgramming/2B_LongestBranch_Reduce';
 import runLongestBranch_Lazy from './src/FunctionalProgramming/2C_LongestBranch_Lazy';
-import runStreamEamples from './src/FunctionalProgramming/3C_StreamExamples';
+import runStreamExamples from './src/FunctionalProgramming/3B_Stream';
 const Run = {
   // evaluatorTests: require('./src/MathEvaluator/EvaluatorTests'),
   // promises: require('./src/TypeScriptLanguage/3A_Promises'),
@@ -11,9 +11,9 @@ const Run = {
   runLongestBranch_ForLoop: runLongestBranch_ForLoop,
   runLongestBranch_Reduce: runLongestBranch_Reduce,
   runLongestBranch_Lazy: runLongestBranch_Lazy,
-  runStreamEamples: runStreamEamples,
+  runStreamExamples: runStreamExamples,
 };
-Run.runLongestBranch_Lazy();
+Run.runStreamExamples();
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
