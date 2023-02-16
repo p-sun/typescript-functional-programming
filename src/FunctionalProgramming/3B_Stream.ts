@@ -28,7 +28,7 @@ const EmptyStream = $(() => undefined);
 
 // Not as performant as streamUsingYield.
 // Academic excercise for thinking about FP Streams, and how yield is implemented.
-const streamUsingSuspension = (arr: readonly number[]) => {
+const streamUsingLazy = (arr: readonly number[]) => {
   const helper = (i: number): Lazy<StreamCell<number> | undefined> => {
     if (i >= arr.length) {
       return EmptyStream;
@@ -50,7 +50,7 @@ export default function run() {
 
   // 1136 milliseconds, length = 100000, repeat = 100
   runPerformanceTest(repeat, () => {
-    let stream = streamUsingSuspension(arr);
+    let stream = streamUsingLazy(arr);
     let next = stream.force();
     while (next) {
       //   console.log(next.value);

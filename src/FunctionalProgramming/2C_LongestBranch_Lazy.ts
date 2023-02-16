@@ -10,39 +10,51 @@ export default function run() {
   const A = new Tree('A', [B, C]);
 
   // {id: 'C', name: 'ABC', length: 3}
-  console.log('runPureLazyTree: ', getLongestBranch(A));
+  console.log('getLongestBranch preorder: ', getLongestBranchPreorder(A));
+
+  // {id: 'A', name: 'CBA', length: 3}
+  console.log('getLongestBranch postorder: ', getLongestBranchPostorder(A));
 }
 
 /* -------------------------------------------------------------------------- */
 /*                             Get Longest Branch                             */
 /* -------------------------------------------------------------------------- */
 /* 
-The purpose of `getLongestBranch()` is to explore lazy FP data structures.
+The purpose of `getLongestBranch...()` is to explore lazy FP data structures.
 For the easiest way to solve this problem, see 2B `longestBranch()`.
 
 GOALS:
-1. Transform RECURSIVE TREE traversal problem that can use a stack as deep as the tree,
-   into a FLAT LAZY FP problem, traversing one node at a time using next().
+1. Transform RECURSIVE TREE traversal problem into a LAZY FP problem,
+   traversing one node at a time using next(). Uses a callstack as deep as the tree.
 2. Compose solution with tiny FP methods.
-3. `buildCurrentBranch()` - Fold data from parent to child nodes, passed to `reduceDown()`.
+3. `buildCurrentBranch()` - Fold data from child node to Branch accumulator.
 4. `getLongerBranch` - Fold Generator results into a single result, passed to `reduce()`.
 
 Note this solution builds the longest branch name from root to leaves using the stack,
 whereas the `longestBranch()` solution bubbles the name from leaves to root.
  */
-const getLongestBranch = (tree: Tree) =>
+const getLongestBranchPreorder = (tree: Tree) =>
   finalValue(
     reduce(
-      tree.preorderIterator(buildCurrentBranch, isLeaf, EmptyBranch),
+      tree.preorderReducer(buildCurrentBranch, isLeaf, EmptyBranch),
       getLongerBranch,
       EmptyBranch
     )
   );
 
-const buildCurrentBranch = (parentAcc: Branch, current: Tree): Branch => ({
+const getLongestBranchPostorder = (tree: Tree) =>
+  finalValue(
+    reduce(
+      tree.postOrderReducer(buildCurrentBranch, isLeaf, EmptyBranch),
+      getLongerBranch,
+      EmptyBranch
+    )
+  );
+
+const buildCurrentBranch = (acc: Branch, current: Tree): Branch => ({
   id: current.id,
-  name: parentAcc.name + current.id,
-  length: parentAcc.length + 1,
+  name: acc.name + current.id,
+  length: acc.length + 1,
 });
 
 // `isLeaf` is a small optimization to avoid unnecessary yielding,
@@ -66,8 +78,8 @@ class Tree {
   }
 
   // Preorder traversal, yielding at each node that pass the predicate.
-  // Accumulate result down each branch.
-  *preorderIterator<S>(
+  // Accumulate result DOWN each branch, from root to leaves.
+  *preorderReducer<S>(
     reduceDown: (parentAcc: S, current: Tree) => S,
     predicate: ((current: Tree) => boolean) | undefined,
     initAcc: S
@@ -82,6 +94,22 @@ class Tree {
       }
     }
     yield* helper(initAcc, this);
+  }
+
+  // Postorder traversal, yielding at each node that pass the predicate.
+  // Accumulate result UP each branch, from leaves to root.
+  *postOrderReducer<S>(
+    reduceUp: (acc: S, current: Tree) => S,
+    predicate: ((current: Tree) => boolean) | undefined,
+    initAcc: S
+  ): Generator<S> {
+    for (let c of this.children) {
+      const childReducers = c.postOrderReducer(reduceUp, predicate, initAcc);
+      yield* map(childReducers, (childAcc) => reduceUp(childAcc, this));
+    }
+    if (predicate ? predicate(this) : true) {
+      yield reduceUp(initAcc, this);
+    }
   }
 }
 

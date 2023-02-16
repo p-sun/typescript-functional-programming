@@ -13,7 +13,7 @@ const Run = {
   runLongestBranch_Lazy: runLongestBranch_Lazy,
   runStreamExamples: runStreamExamples,
 };
-Run.runStreamExamples();
+Run.runLongestBranch_Lazy();
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
