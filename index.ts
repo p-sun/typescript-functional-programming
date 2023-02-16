@@ -2,6 +2,9 @@ import runLongestBranch_ForLoop from './src/FunctionalProgramming/2A_LongestBran
 import runLongestBranch_Reduce from './src/FunctionalProgramming/2B_LongestBranch_Reduce';
 import runLongestBranch_Lazy from './src/FunctionalProgramming/2C_LongestBranch_Lazy';
 import runStreamExamples from './src/FunctionalProgramming/3B_Stream';
+import runParserCombinator from './src/MathEvaluator/ParserCombinator';
+import runParserCombinatorYT from './src/MathEvaluator/ParserCombinatorYT';
+
 const Run = {
   // evaluatorTests: require('./src/MathEvaluator/EvaluatorTests'),
   // promises: require('./src/TypeScriptLanguage/3A_Promises'),
@@ -12,8 +15,14 @@ const Run = {
   runLongestBranch_Reduce: runLongestBranch_Reduce,
   runLongestBranch_Lazy: runLongestBranch_Lazy,
   runStreamExamples: runStreamExamples,
+  runParserCombinatorYT: runParserCombinatorYT,
+  runParserCombinator: runParserCombinator,
 };
-Run.runLongestBranch_Lazy();
+
+Run.runLongestBranch_Reduce();
+// Run.runLongestBranch_Lazy();
+// Run.runParserCombinatorYT();
+// Run.runParserCombinator();
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
