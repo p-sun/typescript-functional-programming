@@ -2,8 +2,8 @@ import runLongestBranch_ForLoop from './src/FunctionalProgramming/2A_LongestBran
 import runLongestBranch_Reduce from './src/FunctionalProgramming/2B_LongestBranch_Reduce';
 import runLongestBranch_Lazy from './src/FunctionalProgramming/2C_LongestBranch_Lazy';
 import runStreamExamples from './src/FunctionalProgramming/3B_Stream';
-import runParserCombinator from './src/MathEvaluator/ParserCombinator';
-import runParserCombinatorYT from './src/MathEvaluator/ParserCombinatorYT';
+import runParserCombinator from './src/ParserCombinator/ParserCombinator';
+import runParserCombinatorYT from './src/ParserCombinator/ParserCombinatorYT';
 
 const Run = {
   // evaluatorTests: require('./src/MathEvaluator/EvaluatorTests'),
@@ -19,10 +19,10 @@ const Run = {
   runParserCombinator: runParserCombinator,
 };
 
-Run.runLongestBranch_Reduce();
+// Run.runLongestBranch_Reduce();
 // Run.runLongestBranch_Lazy();
 // Run.runParserCombinatorYT();
-// Run.runParserCombinator();
+Run.runParserCombinator();
 
 const rootElement = document.getElementById('root');
 if (rootElement) {

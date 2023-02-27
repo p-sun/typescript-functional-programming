@@ -39,7 +39,9 @@ export class ParseResult<T> {
     public readonly data:
       | { tag: 'value'; value: T }
       | { tag: 'error'; message: string }
-  ) {}
+  ) {
+    Object.freeze(this);
+  }
 
   static MakeValue<T>(value: T) {
     return new ParseResult({ tag: 'value', value });
