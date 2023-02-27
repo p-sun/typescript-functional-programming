@@ -193,21 +193,24 @@ export class CombinatorParser<Kind, ResultA> {
 /*                              Character Parser                              */
 /* -------------------------------------------------------------------------- */
 
-export function str<Kind>(toMatch: string): CombinatorParser<Kind, string> {
+export function str<Kind>(
+  ...toMatchStrings: string[]
+): CombinatorParser<Kind, string> {
   return new CombinatorParser((token: Token<Kind>) => {
-    const nextToken = token.next(toMatch.length);
-    if (nextToken && nextToken.valueText === toMatch) {
-      return ParseOutput.MakeValue([
-        {
-          token: nextToken, //.withValue(toMatch),
-          result: toMatch,
-        },
-      ]);
+    for (const toMatch of toMatchStrings) {
+      const nextToken = token.next(toMatch.length);
+      if (nextToken && nextToken.valueText === toMatch) {
+        return ParseOutput.MakeValue([
+          {
+            token: nextToken, //.withValue(toMatch),
+            result: toMatch,
+          },
+        ]);
+      }
     }
+
     return ParseOutput.MakeError(
-      `Expected '${toMatch}' but got '${
-        nextToken?.valueText ?? '<end of input>'
-      }'`
+      `Expected any of [${toMatchStrings}] at position ${token.pos}.`
     );
   });
 }
@@ -394,4 +397,5 @@ export default function run() {
       .chain(l)
       .run('worrld')}`
   );
+
 }

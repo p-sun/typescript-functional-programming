@@ -4,8 +4,8 @@ import {
   or,
   ParseOutput,
   sequence,
-  str,
   repeatOnceOrMore,
+  str,
 } from '../ParserCombinator';
 
 const w = str('w');
@@ -79,16 +79,10 @@ describe('test Parser Combinator', () => {
     ]);
 
     // ro on 'world' - Fail on first element in 'and'
-    expect(and(r, o).run('world').data).toStrictEqual({
-      message: "Expected 'r' but got 'w'",
-      successful: false,
-    });
+    expect(and(r, o).run('world').data.successful).toBe(false);
 
     // wr on 'world' - Fail on 2nd element in 'and'
-    expect(and(w, r).run('world').data).toStrictEqual({
-      message: "Expected 'r' but got 'o'",
-      successful: false,
-    });
+    expect(and(w, r).run('world').data.successful).toBe(false);
   });
 
   it('Should be able to parse `sequence`', () => {
@@ -212,7 +206,7 @@ describe('test Parser Combinator', () => {
     ).toStrictEqual([['w', 'o', ['r', 'r', 'r'], 'l']]);
   });
 
-  it('`repeatOnceOrMore`', () => {
+  it('`repeatOnceOrMore` should match at least once', () => {
     // wr+ on `w`
     expect(results(w.chain(repeatOnceOrMore(r)).run('w'))).toStrictEqual([]);
 
@@ -220,6 +214,20 @@ describe('test Parser Combinator', () => {
     expect(results(w.chain(repeatOnceOrMore(r)).run('wr'))).toStrictEqual([
       ['w', ['r']],
     ]);
+  });
+
+  it('`str` should match from a set of strings', () => {
+    // (a|bb|ccc) on `a`
+    expect(results(str('a', 'bb', 'ccc').run('a'))).toStrictEqual(['a']);
+
+    // (a|bb|ccc) on `ccc`
+    expect(results(str('a', 'bb', 'ccc').run('ccc'))).toStrictEqual(['ccc']);
+
+    // (bb|ccc) on `a`
+    expect(str('bb', 'ccc').run('a').data.successful).toBe(false);
+
+    // (bb|ccc) on `b`
+    expect(str('bb', 'ccc').run('b').data.successful).toBe(false);
   });
 
   it('`template`', () => {});
