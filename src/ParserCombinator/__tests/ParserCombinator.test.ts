@@ -159,14 +159,14 @@ describe('test Parser Combinator', () => {
     expect(results(repeat(r).run('world'))).toStrictEqual([[]]);
 
     // r*  r
-    expect(results(repeat(r).run('r'))).toStrictEqual([[], ['r']]);
+    expect(results(repeat(r).run('r'))).toStrictEqual([['r'], []]);
 
     // r*  rrr
     expect(results(repeat(r).run('rrr'))).toStrictEqual([
-      [],
-      ['r'],
-      ['r', 'r'],
       ['r', 'r', 'r'],
+      ['r', 'r'],
+      ['r'],
+      [],
     ]);
   });
 
@@ -176,26 +176,26 @@ describe('test Parser Combinator', () => {
 
     // wr* on `wr`
     expect(results(w.chain(repeat(r)).run('wr'))).toStrictEqual([
-      ['w', []],
       ['w', ['r']],
+      ['w', []],
     ]);
 
     // wr* on `wrrr`
     expect(results(w.chain(repeat(r)).run('wrrr'))).toStrictEqual([
-      ['w', []],
-      ['w', ['r']],
-      ['w', ['r', 'r']],
       ['w', ['r', 'r', 'r']],
+      ['w', ['r', 'r']],
+      ['w', ['r']],
+      ['w', []],
     ]);
 
     // (w|wo)o(r*) on `worrrld`
     expect(
       results(or(w, and(w, o)).chain(o).chain(repeat(r)).run('worrrld'))
     ).toStrictEqual([
-      ['w', 'o', []],
-      ['w', 'o', ['r']],
-      ['w', 'o', ['r', 'r']],
       ['w', 'o', ['r', 'r', 'r']],
+      ['w', 'o', ['r', 'r']],
+      ['w', 'o', ['r']],
+      ['w', 'o', []],
     ]);
 
     // (w|wo)o(r*)l on `worrrld`

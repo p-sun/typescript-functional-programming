@@ -339,10 +339,9 @@ export function repeat<Kind, ResultA>(
 ): CombinatorParser<Kind, ResultA[]> {
   return new CombinatorParser((token: Token<Kind>) => {
     const emptyCandidate = { token, result: [] };
-    return ParseOutput.MakeValue([
-      emptyCandidate,
-      ..._candidatesForRepeatParser(parser, token),
-    ]);
+    return ParseOutput.MakeValue(
+      _candidatesForRepeatParser(parser, token).concat(emptyCandidate)
+    );
   });
 }
 
@@ -376,7 +375,7 @@ function _candidatesForRepeatParser<Kind, ResultA>(
         .mapResults((bResult) => aCandidate.result.concat(bResult))
     );
   }
-  return newCandidates;
+  return newCandidates.reverse();
 }
 
 /* -------------------------------------------------------------------------- */
