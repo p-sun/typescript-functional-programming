@@ -5,6 +5,7 @@ import {
   ParseOutput,
   sequence,
   str,
+  repeatOnceOrMore,
 } from '../ParserCombinator';
 
 const w = str('w');
@@ -176,13 +177,16 @@ describe('test Parser Combinator', () => {
   });
 
   it('`many` should repeat a parser 0 or more times, and append its results to previous parser', () => {
+    // wr* on `w`
     expect(results(w.chain(repeat(r)).run('w'))).toStrictEqual([['w', []]]);
 
+    // wr* on `wr`
     expect(results(w.chain(repeat(r)).run('wr'))).toStrictEqual([
       ['w', []],
       ['w', ['r']],
     ]);
 
+    // wr* on `wrrr`
     expect(results(w.chain(repeat(r)).run('wrrr'))).toStrictEqual([
       ['w', []],
       ['w', ['r']],
@@ -190,6 +194,7 @@ describe('test Parser Combinator', () => {
       ['w', ['r', 'r', 'r']],
     ]);
 
+    // (w|wo)o(r*) on `worrrld`
     expect(
       results(or(w, and(w, o)).chain(o).chain(repeat(r)).run('worrrld'))
     ).toStrictEqual([
@@ -199,11 +204,22 @@ describe('test Parser Combinator', () => {
       ['w', 'o', ['r', 'r', 'r']],
     ]);
 
+    // (w|wo)o(r*)l on `worrrld`
     expect(
       results(
         or(w, and(w, o)).chain(o).chain(repeat(r)).chain(l).run('worrrld')
       )
     ).toStrictEqual([['w', 'o', ['r', 'r', 'r'], 'l']]);
+  });
+
+  it('`repeatOnceOrMore`', () => {
+    // wr+ on `w`
+    expect(results(w.chain(repeatOnceOrMore(r)).run('w'))).toStrictEqual([]);
+
+    // wr+ on `wr`
+    expect(results(w.chain(repeatOnceOrMore(r)).run('wr'))).toStrictEqual([
+      ['w', ['r']],
+    ]);
   });
 
   it('`template`', () => {});

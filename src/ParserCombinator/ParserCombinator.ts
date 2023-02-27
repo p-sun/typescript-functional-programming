@@ -335,21 +335,45 @@ export function repeat<Kind, ResultA>(
   parser: CombinatorParser<Kind, ResultA>
 ): CombinatorParser<Kind, ResultA[]> {
   return new CombinatorParser((token: Token<Kind>) => {
-    const newCandidates: Candidate<Kind, ResultA[]>[] = [{ token, result: [] }];
-    let output = parser.parse(token).mapResults((result) => [result]);
-
-    while (output.data.successful) {
-      newCandidates.push(...output.candidates);
-
-      output = output.mapCandidates((aCandidate) =>
-        parser
-          .parse(aCandidate.token)
-          .mapResults((bResult) => aCandidate.result.concat(bResult))
-      );
-    }
-
-    return ParseOutput.MakeValue(newCandidates);
+    const emptyCandidate = { token, result: [] };
+    return ParseOutput.MakeValue([
+      emptyCandidate,
+      ..._candidatesForRepeatParser(parser, token),
+    ]);
   });
+}
+
+// Like the + operator in regex.
+export function repeatOnceOrMore<Kind, ResultA>(
+  parser: CombinatorParser<Kind, ResultA>
+): CombinatorParser<Kind, ResultA[]> {
+  return new CombinatorParser((token: Token<Kind>) => {
+    const candidates = _candidatesForRepeatParser(parser, token);
+    if (candidates.length === 0) {
+      return ParseOutput.MakeError('No matches for repeatAtLeastOnce parser.');
+    } else {
+      return ParseOutput.MakeValue(candidates);
+    }
+  });
+}
+
+function _candidatesForRepeatParser<Kind, ResultA>(
+  parser: CombinatorParser<Kind, ResultA>,
+  token: Token<Kind>
+) {
+  const newCandidates: Candidate<Kind, ResultA[]>[] = [];
+  let output = parser.parse(token).mapResults((result) => [result]);
+
+  while (output.data.successful) {
+    newCandidates.push(...output.candidates);
+
+    output = output.mapCandidates((aCandidate) =>
+      parser
+        .parse(aCandidate.token)
+        .mapResults((bResult) => aCandidate.result.concat(bResult))
+    );
+  }
+  return newCandidates;
 }
 
 /* -------------------------------------------------------------------------- */
