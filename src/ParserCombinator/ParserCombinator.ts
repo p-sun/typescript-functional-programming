@@ -429,4 +429,14 @@ export default function run() {
       .run('worrld')}`
   );
 
+  const parenthesis = str('(', ')'); // \(|\)
+  const operator = str('+', '-', '*', '/'); // (\+|-|\*|\/)
+  const digits = repeatOnceOrMore_greedy(
+    str(...Array.from('0123456789'))
+  ).mapResults((digitsArr) => digitsArr.join('')); // \d*
+  const token = orFirst(orFirst(parenthesis, operator), digits);
+  const tokenArrayParser = repeatOnceOrMore_greedy(token); // ([\(|\)]|[\+|-|\*|\/]|\d+)+
+  console.log(
+    `Parse Math (123+456)+789: ${tokenArrayParser.run('(123+456)+789')}`
+  );
 }
