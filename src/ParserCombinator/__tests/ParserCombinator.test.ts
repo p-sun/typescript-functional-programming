@@ -6,6 +6,7 @@ import {
   sequence,
   repeatOnceOrMore,
   str,
+  repeatOnceOrMore_greedy,
 } from '../ParserCombinator';
 
 const w = str('w');
@@ -214,6 +215,18 @@ describe('test Parser Combinator', () => {
     expect(results(w.chain(repeatOnceOrMore(r)).run('wr'))).toStrictEqual([
       ['w', ['r']],
     ]);
+  });
+
+  it('`repeatOnceOrMore_greedy` should match as many times as it can', () => {
+    // wr+ on `w`
+    expect(w.chain(repeatOnceOrMore_greedy(r)).run('w').data.successful).toBe(
+      false
+    );
+
+    // wr+ on `wrrr`
+    expect(
+      results(w.chain(repeatOnceOrMore_greedy(r)).run('wrrr'))
+    ).toStrictEqual([['w', ['r', 'r', 'r']]]);
   });
 
   it('`str` should match from a set of strings', () => {

@@ -103,6 +103,19 @@ export class ParseOutput<Kind, ResultA> {
     }
   }
 
+  filterCandidates(
+    fn: (c: Candidate<Kind, ResultA>) => boolean
+  ): ParseOutput<Kind, ResultA> {
+    if (!this.data.successful) {
+      return new ParseOutput(this.data);
+    } else {
+      return new ParseOutput({
+        successful: true,
+        candidates: this.data.candidates.filter(fn),
+      });
+    }
+  }
+
   mapResults<ResultB>(fn: (v: ResultA) => ResultB): ParseOutput<Kind, ResultB> {
     if (!this.data.successful) {
       return new ParseOutput(this.data);
@@ -187,6 +200,17 @@ export class CombinatorParser<Kind, ResultA> {
       )
     );
   }
+
+  // Unused. Apply another parser to each candidate of this parser.
+  chainCandidate<ResultB>(
+    nextParser: (
+      output: Candidate<Kind, ResultA>
+    ) => CombinatorParser<Kind, ResultB>
+  ): CombinatorParser<Kind, ResultB> {
+    return new CombinatorParser<Kind, ResultB>((token: Token<Kind>) =>
+      this.parse(token).mapCandidates((c) => nextParser(c).parse(c.token))
+    );
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -253,7 +277,7 @@ export function sequence<Kind>(
       output = output.mapCandidates((aCandidate) =>
         p
           .parse(aCandidate.token)
-          .mapResults((bResult) => aCandidate.result.concat(bResult))
+          .mapResults((bResult) => [...aCandidate.result, bResult])
       );
     }
     return output;
@@ -339,9 +363,21 @@ export function repeat<Kind, ResultA>(
 ): CombinatorParser<Kind, ResultA[]> {
   return new CombinatorParser((token: Token<Kind>) => {
     const emptyCandidate = { token, result: [] };
-    return ParseOutput.MakeValue(
-      _candidatesForRepeatParser(parser, token).concat(emptyCandidate)
-    );
+
+    const newCandidates: Candidate<Kind, ResultA[]>[] = [emptyCandidate];
+    let output = parser.parse(token).mapResults((result) => [result]);
+
+    while (output.data.successful) {
+      newCandidates.push(...output.candidates);
+
+      output = output.mapCandidates((aCandidate) =>
+        parser.parse(aCandidate.token).mapResults((bResult) => {
+          return [...aCandidate.result, bResult];
+        })
+      );
+    }
+
+    return ParseOutput.MakeValue(newCandidates.reverse());
   });
 }
 
@@ -350,32 +386,28 @@ export function repeatOnceOrMore<Kind, ResultA>(
   parser: CombinatorParser<Kind, ResultA>
 ): CombinatorParser<Kind, ResultA[]> {
   return new CombinatorParser((token: Token<Kind>) => {
-    const candidates = _candidatesForRepeatParser(parser, token);
-    if (candidates.length === 0) {
+    const output = repeat(parser).parse(token);
+    if (!output.data.successful || output.candidates.length <= 1) {
       return ParseOutput.MakeError('No matches for repeatAtLeastOnce parser.');
     } else {
-      return ParseOutput.MakeValue(candidates);
+      // Remove the empty candidate.
+      return ParseOutput.MakeValue(output.candidates.slice(0, -1));
     }
   });
 }
 
-function _candidatesForRepeatParser<Kind, ResultA>(
-  parser: CombinatorParser<Kind, ResultA>,
-  token: Token<Kind>
-) {
-  const newCandidates: Candidate<Kind, ResultA[]>[] = [];
-  let output = parser.parse(token).mapResults((result) => [result]);
-
-  while (output.data.successful) {
-    newCandidates.push(...output.candidates);
-
-    output = output.mapCandidates((aCandidate) =>
-      parser
-        .parse(aCandidate.token)
-        .mapResults((bResult) => aCandidate.result.concat(bResult))
-    );
-  }
-  return newCandidates.reverse();
+// Like the + operator in regex, but only returns the first match.
+export function repeatOnceOrMore_greedy<Kind, ResultA>(
+  parser: CombinatorParser<Kind, ResultA>
+): CombinatorParser<Kind, ResultA[]> {
+  return new CombinatorParser((token: Token<Kind>) => {
+    const output = repeat(parser).parse(token);
+    if (!output.data.successful || output.candidates.length <= 1) {
+      return ParseOutput.MakeError('No matches for repeatAtLeastOnce parser.');
+    } else {
+      return ParseOutput.MakeValue([output.candidates[0]]);
+    }
+  });
 }
 
 /* -------------------------------------------------------------------------- */
