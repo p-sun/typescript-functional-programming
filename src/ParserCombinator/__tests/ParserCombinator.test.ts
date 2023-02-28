@@ -7,6 +7,7 @@ import {
   repeatOnceOrMore,
   str,
   repeatOnceOrMore_greedy,
+  number,
 } from '../ParserCombinator';
 
 const w = str('w');
@@ -241,6 +242,17 @@ describe('test Parser Combinator', () => {
 
     // (bb|ccc) on `b`
     expect(str('bb', 'ccc').run('b').data.successful).toBe(false);
+  });
+
+  it('Should be able to parse `number`', () => {
+    // \d+ 'aaa'
+    expect(number().run('aaa').data.successful).toBe(false);
+
+    // \d+ '123'
+    expect(results(number().run('123'))).toStrictEqual(['123']);
+
+    // \d+ '123'
+    expect(results(number().run('123aaa'))).toStrictEqual(['123']);
   });
 
   it('`template`', () => {});

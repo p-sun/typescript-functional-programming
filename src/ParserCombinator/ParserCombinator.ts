@@ -12,18 +12,19 @@ class Token<Kind> {
     public readonly value?: Kind // typed value of the token
   ) {}
 
+  remainingString(): string | undefined {
+    const slice = this.targetString.slice(this.pos);
+    return slice.length > 0 ? slice : undefined;
+  }
+
   next(count: number): Token<Kind> | undefined {
-    const endPos = this.pos + count;
+    const endPos = count ? this.pos + count : this.targetString.length;
     if (endPos > this.targetString.length) {
       return undefined;
     } else {
       const valueText = this.targetString.slice(this.pos, endPos);
       return new Token<Kind>(this.targetString, endPos, valueText, undefined);
     }
-  }
-
-  withValue<S>(value: S): Token<S> {
-    return new Token<S>(this.targetString, this.pos, this.valueText, value);
   }
 }
 
@@ -239,6 +240,23 @@ export function str<Kind>(
   });
 }
 
+export function number<Kind>(): CombinatorParser<Kind, string> {
+  return new CombinatorParser((token: Token<Kind>) => {
+    const remainingStr = token.remainingString();
+    const n = remainingStr ? parseInt(remainingStr) : NaN;
+    if (n) {
+      return ParseOutput.MakeValue([
+        {
+          token: token.next(n.toString().length)!,
+          result: n.toString(),
+        },
+      ]);
+    }
+
+    return ParseOutput.MakeError(`Expected a number at position ${token.pos}.`);
+  });
+}
+
 /* -------------------------------------------------------------------------- */
 /*                        Combine Parsers Sequentially                        */
 /* -------------------------------------------------------------------------- */
@@ -431,10 +449,11 @@ export default function run() {
 
   const parenthesis = str('(', ')'); // \(|\)
   const operator = str('+', '-', '*', '/'); // (\+|-|\*|\/)
+  // `digits` is the same as number()
   const digits = repeatOnceOrMore_greedy(
     str(...Array.from('0123456789'))
   ).mapResults((digitsArr) => digitsArr.join('')); // \d*
-  const token = orFirst(orFirst(parenthesis, operator), digits);
+  const token = orFirst(orFirst(parenthesis, operator), number());
   const tokenArrayParser = repeatOnceOrMore_greedy(token); // ([\(|\)]|[\+|-|\*|\/]|\d+)+
   console.log(
     `Parse Math (123+456)+789: ${tokenArrayParser.run('(123+456)+789')}`

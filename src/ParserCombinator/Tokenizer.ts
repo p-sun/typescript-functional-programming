@@ -6,7 +6,12 @@ import {
   Or_Parser,
   RepeatToArray_Parser,
 } from './OtherImplementations/ParserCombinatorOld';
-import { str, repeatOnceOrMore_greedy, orFirst } from './ParserCombinator';
+import {
+  str,
+  repeatOnceOrMore_greedy,
+  orFirst,
+  number,
+} from './ParserCombinator';
 
 export default function mathTokenizer(contents: string): TermToken[] {
   return mathTokenizer_newParserCombinator(contents);
@@ -19,7 +24,7 @@ function mathTokenizer_newParserCombinator(contents: string): TermToken[] {
   const digits = repeatOnceOrMore_greedy(
     str(...Array.from('0123456789'))
   ).mapResults((digitsArr) => digitsArr.join('')); // \d*
-  const token = orFirst(orFirst(parenthesis, operator), digits);
+  const token = orFirst(orFirst(parenthesis, operator), number());
   const tokenArrayParser = repeatOnceOrMore_greedy(token); // ([\(|\)]|[\+|-|\*|\/]|\d+)+
 
   const result = tokenArrayParser.run(whitespaceRemoved);
