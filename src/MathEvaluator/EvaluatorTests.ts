@@ -1,17 +1,43 @@
+import {
+  And_Parser,
+  matchChars,
+  Or_Parser,
+  Parser,
+  RepeatToString_Parser,
+  TextBuffer,
+} from '../ParserCombinator/OtherImplementations/ParserCombinatorOld';
+import mathTokenizer from '../ParserCombinator/Tokenizer';
 import { evaluateExpression, evaluate, Expression } from './Evaluator';
 import Term from './Term';
-import mathTokenizer, {
-  And_Parser,
-  Or_Parser,
-  matchChars,
-  TextBuffer,
-  type Parser,
-  RepeatToString_Parser,
-} from './Tokenizer';
 import parseTokensToTerms from './TokensParser';
 
 export default function runEvaluatorTests() {
   try {
+    // H e l l o W o r l d
+    // 0 1 2 3 4 5 6 7 8 9
+    // const H = matchChars(['H']);
+    // const e = matchChars(['e']);
+    // const R = matchChars(['R']);
+    // const l = matchChars(['l']);
+    // const o = matchChars(['o']);
+    // const W = matchChars(['W']);
+    // const repeatH = RepeatToString_Parser(H); // H+
+    // const he = And_Parser(H, e);
+    // const hel = And_Parser(H, And_Parser(e, l));
+    // const lR = And_Parser(l, R);
+    // const ll = And_Parser(l, l);
+    // const llo = And_Parser(l, And_Parser(l, o));
+    // const lR__or__l__or__llo = Or_Parser(lR, Or_Parser(l, llo));
+    // const hel2 = And_Parser(he, lR__or__l__or__llo);
+    // const hello = And_Parser(he, And_Parser(lR__or__l__or__llo, W));
+    // assertParseResult('HelloWorld', `H,e`, 'llo', he);
+    // assertParseResult('HelloWorld', `H,e,l`, 'loW', hel);
+    // assertParseResult('lloWorld', `l`, 'loW', lR__or__l__or__llo);
+    // assertParseResult('HelloWorld', 'H,e,l', 'loW', hel2);
+    // const Hel = And_Parser(Or_Parser(H, And_Parser(H, e)), l); // (H|He)l
+    // assertParseResult('HelloWorld', 'H,e,l', 'loW', Hel);
+    // assertParseResult('HelloWorld', 'H,e,l', 'loW', hello);
+
     runMathTokenizerTests();
     runMathParserTests();
     runMathEvaluationTests();

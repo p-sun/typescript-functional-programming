@@ -1,5 +1,5 @@
+import mathTokenizer from '../ParserCombinator/Tokenizer';
 import Term from './Term';
-import mathTokenizer from './Tokenizer';
 import parseTokensToTerms from './TokensParser';
 
 /*

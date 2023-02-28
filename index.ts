@@ -2,11 +2,12 @@ import runLongestBranch_ForLoop from './src/FunctionalProgramming/2A_LongestBran
 import runLongestBranch_Reduce from './src/FunctionalProgramming/2B_LongestBranch_Reduce';
 import runLongestBranch_Lazy from './src/FunctionalProgramming/2C_LongestBranch_Lazy';
 import runStreamExamples from './src/FunctionalProgramming/3B_Stream';
+import runEvaluatorTests from './src/MathEvaluator/EvaluatorTests';
+import runParserCombinatorYouTube from './src/ParserCombinator/OtherImplementations/ParserEpisode4';
 import runParserCombinator from './src/ParserCombinator/ParserCombinator';
-import runParserCombinatorYT from './src/ParserCombinator/ParserCombinatorYT';
 
 const Run = {
-  // evaluatorTests: require('./src/MathEvaluator/EvaluatorTests'),
+  runEvaluatorTests: runEvaluatorTests,
   // promises: require('./src/TypeScriptLanguage/3A_Promises'),
   // myPromisesTests: require('./src/TypeScriptLanguage/3B2_MyPromiseTests'),
   myPromisesAllTests: require('./src/TypeScriptLanguage/3C2_MyPromisesAllTests'),
@@ -15,13 +16,11 @@ const Run = {
   runLongestBranch_Reduce: runLongestBranch_Reduce,
   runLongestBranch_Lazy: runLongestBranch_Lazy,
   runStreamExamples: runStreamExamples,
-  runParserCombinatorYT: runParserCombinatorYT,
+  runParserCombinatorYouTube: runParserCombinatorYouTube,
   runParserCombinator: runParserCombinator,
 };
 
-// Run.runLongestBranch_Reduce();
-// Run.runLongestBranch_Lazy();
-// Run.runParserCombinatorYT();
+Run.runEvaluatorTests();
 Run.runParserCombinator();
 
 const rootElement = document.getElementById('root');
