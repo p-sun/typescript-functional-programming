@@ -224,4 +224,4 @@ errorEventually_mine<boolean>('ErrorB', 810)
     );
   });
 
-export default function runMyPromiseTests() {}
+export default function run() {}

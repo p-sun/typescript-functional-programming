@@ -1,4 +1,4 @@
-import { MyPromise } from '../3B1_MyPromise';
+import { MyPromise } from '../B1_MyPromise';
 
 /* -------------------------------------------------------------------------- */
 /*                   Generic Promises for Success and Error                   */

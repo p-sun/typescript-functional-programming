@@ -1,4 +1,4 @@
-import { MyPromisesResult2 } from './3D1_MyPromisesAll2';
+import { MyPromisesResult2 } from './D1_MyPromisesAll2';
 
 // mutable tuple
 type elements0 = MyPromisesResult2<[Promise<string>, Promise<number>]>;

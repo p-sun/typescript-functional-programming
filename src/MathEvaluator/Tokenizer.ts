@@ -1,17 +1,17 @@
-import { TermToken } from '../MathEvaluator/Term';
 import {
   TextBuffer,
   matchChars,
   RepeatToString_Parser,
   Or_Parser,
   RepeatToArray_Parser,
-} from './OtherImplementations/ParserCombinatorOld';
+} from '../ParserCombinator/OtherImplementations/ParserCombinatorOld';
 import {
   str,
   repeatOnceOrMore_greedy,
   orFirst,
   number,
-} from './ParserCombinator';
+} from '../ParserCombinator/ParserCombinator';
+import { TermToken } from './Term';
 
 export default function mathTokenizer(contents: string): TermToken[] {
   return mathTokenizer_newParserCombinator(contents);

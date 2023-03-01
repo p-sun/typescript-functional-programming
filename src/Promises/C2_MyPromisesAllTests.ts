@@ -1,4 +1,4 @@
-import { MyPromisesAll, MyPromisesResult } from './3C1_MyPromisesAll';
+import { MyPromisesAll, MyPromisesResult } from './C1_MyPromisesAll';
 
 /* -------------------------------------------------------------------------- */
 /*         Test a MyPromisesAll() with the same types as Promise.all()        */

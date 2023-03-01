@@ -3,7 +3,7 @@
 /* -------------------------------------------------------------------------- */
 // An ordered list of items that supports push and pop.
 //      like a stack of plates in a dinner
-//      LIFO - last in is the first out, and
+//      LIFO - last in is the first out, or alternatively
 //      FILO - first in is the last out
 
 class MutableStack<T> {

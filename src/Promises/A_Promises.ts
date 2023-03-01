@@ -12,7 +12,10 @@ function averageAll() {
   const avgC = average(10, 30); // 20
   return (avgA + avgB + avgC) / 3;
 }
-console.log('averageAllNumbers(): ' + averageAll()); // 12.66
+
+function runAverage() {
+  console.log('averageAllNumbers(): ' + averageAll()); // 12.66
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                With Promises                               */
@@ -104,24 +107,28 @@ async function singlePromiseAsync() {
 /*                              Chaining Promises                             */
 /* -------------------------------------------------------------------------- */
 
-averageAllEventually_0()
-  // avg is 12.66
-  // Return a Promise<number>
-  .then((avg) => {
-    return averageEventually(100, 300, /* ms */ 300);
-  })
-  // avg is 200
-  // Return a Promise<{ averageVal: number }>
-  .then((avg) => {
-    return {
-      averageVal: avg, // avg is 200
-    };
-  })
-  // obj is { averageVal: 200 }
-  // Return undefined
-  .then((obj) =>
-    console.log(`averageAllEventually_0(), third then:' ${JSON.stringify(obj)}`)
-  );
+function runPromisesChain() {
+  averageAllEventually_0()
+    // avg is 12.66
+    // Return a Promise<number>
+    .then((avg) => {
+      return averageEventually(100, 300, /* ms */ 300);
+    })
+    // avg is 200
+    // Return a Promise<{ averageVal: number }>
+    .then((avg) => {
+      return {
+        averageVal: avg, // avg is 200
+      };
+    })
+    // obj is { averageVal: 200 }
+    // Return undefined
+    .then((obj) =>
+      console.log(
+        `averageAllEventually_0(), third then:' ${JSON.stringify(obj)}`
+      )
+    );
+}
 
 function PromisePair<A, B>(a: Promise<A>, b: Promise<B>): Promise<[A, B]> {
   return a.then((aResult) => {

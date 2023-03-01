@@ -5,11 +5,11 @@ import {
   Parser,
   RepeatToString_Parser,
   TextBuffer,
-} from '../ParserCombinator/OtherImplementations/ParserCombinatorOld';
-import mathTokenizer from '../ParserCombinator/Tokenizer';
-import { evaluateExpression, evaluate, Expression } from './Evaluator';
-import Term from './Term';
-import parseTokensToTerms from './TokensParser';
+} from '../../ParserCombinator/OtherImplementations/ParserCombinatorOld';
+import { evaluateExpression, evaluate, Expression } from '../Evaluator';
+import Term from '../Term';
+import mathTokenizer from '../Tokenizer';
+import parseTokensToTerms from '../TokensParser';
 
 export default function runEvaluatorTests() {
   try {
