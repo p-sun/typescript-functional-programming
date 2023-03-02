@@ -31,9 +31,16 @@ const Run = {
     // Use Parser Combinator to tokenzie and evaluate math expressions from string
     runEvaluatorTests: runEvaluatorTests,
   },
+  FPBasics: {
+    // Currying: require('./src/FunctionalProgramming/1B_Currying'),
+  },
+  JSLanguage: {
+    runThisCallApplyBind: require('./src/TypeScriptLanguage/4_JS_ThisBindApplyCall'),
+  },
 };
 
-Run.FPDataStructures.runStack();
+// Run.FPDataStructures.runStack();
+// Run.JSLanguage.runThisAndBind();
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
