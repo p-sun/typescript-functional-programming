@@ -4,6 +4,13 @@ A variety of functional programming examples in TypeScript.
 
 See [Index.ts](https://github.com/p-sun/typescript-functional-programming/blob/main/index.ts) for contents.
 
+## Functional Programming Fundamentals
+
+- Map & Reduce
+- Data Structures & recursion: Stack & Tree
+- Lazy evaluation, Stream
+- Monads
+
 ## Promises
 
 - A simplified implementation of JS Promises. [MyPromise.ts]

@@ -15,6 +15,9 @@ const Run = {
     // runMyPromisesAll: require('./src/Promises/C2_MyPromisesAllTests'),
     // myPromisesAll2Tests: require('./src/Promises/D2_MyPromisesAll2Tests'),
   },
+  JSLanguage: {
+    // runThisCallApplyBind: require('./src/TypeScriptLanguage/4_JS_ThisBindApplyCall'),
+  },
   FPDataStructures: {
     runStack: runStack,
     runStream: runStream,
@@ -35,9 +38,6 @@ const Run = {
   MathEvaluator: {
     // Use Parser Combinator to tokenzie and evaluate math expressions from string
     runEvaluatorTests: runEvaluatorTests,
-  },
-  JSLanguage: {
-    runThisCallApplyBind: require('./src/TypeScriptLanguage/4_JS_ThisBindApplyCall'),
   },
 };
 

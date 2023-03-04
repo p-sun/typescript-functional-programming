@@ -19,9 +19,11 @@ const sandwhich = slicedItems.reduce(
 );
 
 /* -------------------------------------------------------------------------- */
-/*                  Implement `map` and `reduce` from scratch                 */
+/*                          Implement Map from Scrach                         */
 /* -------------------------------------------------------------------------- */
 
+// F A -> (A -> B) -> F B
+// "give me an F A and an (A -> B) and I will give you an F B)
 function arrayMap<T, S>(list: S[], fn: (n: S) => T): T[] {
   const result: T[] = [];
   for (const n of list) {
@@ -33,6 +35,10 @@ function arrayMap<T, S>(list: S[], fn: (n: S) => T): T[] {
 
 // ['num: 1', 'num: 2', 'num: 3']
 const m = arrayMap([1, 2, 3], (n) => 'num: ' + n.toString());
+
+/* -------------------------------------------------------------------------- */
+/*                        Implement Reduce from Scratch                       */
+/* -------------------------------------------------------------------------- */
 
 function arrayReduce<T, S>(
   list: T[],

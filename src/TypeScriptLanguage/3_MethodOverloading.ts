@@ -84,4 +84,6 @@ const a3 = [...a1, 'y'] as const;
 
 type Concat<T extends any[], Element> = [...T, Element];
 // [1, 2, 'b']
-type c1 = Concat<[1, 2], 'b'>;
+type a4 = Concat<[1, 2], 'b'>;
+
+export default function run() {}

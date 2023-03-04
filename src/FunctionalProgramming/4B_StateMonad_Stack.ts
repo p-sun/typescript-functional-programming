@@ -67,9 +67,9 @@ const duplicate =
 // ∴ Join:          F (F A)                    -> F A
 const join =
   <T, A>(s: Stack<T, Stack<T, A>>): Stack<T, A> =>
-  (d1) => {
-    const [d2, s1] = s(d1);
-    return s1(d2);
+  (d) => {
+    const [d2, s2] = s(d);
+    return s2(d2);
   };
 
 // `aToB`:                                 (A -> B)
