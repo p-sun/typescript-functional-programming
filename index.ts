@@ -28,7 +28,7 @@ const Run = {
     },
   },
   FPBasics: {
-    // Currying: require('./src/FunctionalProgramming/1B_Currying'),
+    Currying: require('./src/FunctionalProgramming/1B_Currying'),
     runMonadStack: runMonadStack,
   },
   ParserCombinator: {
@@ -42,7 +42,7 @@ const Run = {
 };
 
 // Run.FPDataStructures.runStack();
-Run.FPBasics.runMonadStack();
+// Run.FPBasics.runMonadStack();
 // Run.JSLanguage.runThisAndBind();
 
 const rootElement = document.getElementById('root');
