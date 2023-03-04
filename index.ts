@@ -3,6 +3,7 @@ import runLongestBranch_ForLoop from './src/FunctionalProgramming/2B_DS_Tree_Lon
 import runLongestBranch_Reduce from './src/FunctionalProgramming/2C_DS_Tree_LongestBranch_Reduce';
 import runLongestBranch_Lazy from './src/FunctionalProgramming/2D_DS_Tree_LongestBranch_Lazy';
 import runStream from './src/FunctionalProgramming/3B_Stream';
+import runMonadStack from './src/FunctionalProgramming/4B_StateMonad_Stack';
 import runEvaluatorTests from './src/MathEvaluator/__tests/EvaluatorTests';
 import runParserCombinatorYouTube from './src/ParserCombinator/OtherImplementations/ParserEpisode4';
 import runParserCombinator from './src/ParserCombinator/ParserCombinator';
@@ -23,6 +24,10 @@ const Run = {
       runLazy: runLongestBranch_Lazy,
     },
   },
+  FPBasics: {
+    // Currying: require('./src/FunctionalProgramming/1B_Currying'),
+    runMonadStack: runMonadStack,
+  },
   ParserCombinator: {
     runParserCombinator: runParserCombinator, // One that I wrote in TS
     runParserCombinatorYouTube: runParserCombinatorYouTube, // From YouTube, JS
@@ -31,15 +36,13 @@ const Run = {
     // Use Parser Combinator to tokenzie and evaluate math expressions from string
     runEvaluatorTests: runEvaluatorTests,
   },
-  FPBasics: {
-    // Currying: require('./src/FunctionalProgramming/1B_Currying'),
-  },
   JSLanguage: {
     runThisCallApplyBind: require('./src/TypeScriptLanguage/4_JS_ThisBindApplyCall'),
   },
 };
 
 // Run.FPDataStructures.runStack();
+Run.FPBasics.runMonadStack();
 // Run.JSLanguage.runThisAndBind();
 
 const rootElement = document.getElementById('root');
