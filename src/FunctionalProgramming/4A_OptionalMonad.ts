@@ -12,18 +12,22 @@
 /*                                   Monads                                   */
 /* -------------------------------------------------------------------------- */
 /*
-Monads are a way to compose functions that return values wrapped in a context.
+Monads is a pattern to compose functions that return values wrapped in a type.
+'F A' is a monad type constructor, like a box that wraps around a value of type A.
 
 A -> A                     // Homogeneous functions (includes F A -> F A)
 
-A -> F A                   // Pure ("add an F to A")
-F A -> F (F A)             // Duplicate ("add an F to an F")
+F A -> A                   // Extract ("Take a value out of a box")
 
-F A -> A                   // Extract ("remove an F from A")
-F (F A) -> F A             // Join (aka `flatten`. "removes an F from an F")
+A -> F A                   // Pure ("Put a value in a box")
+F A -> F (F A)             // Duplicate ("Put a box around a box")
 
-(A -> B)   -> F A -> F B   // Map                   (`Functors` have a Map)
-(A -> F B) -> F A -> F B   // Join . Map === Bind   (aka `flatMap`. `Monads` have a Bind, Map, and Join)
+`Functors` have a Map, which needs Extract & Pure:
+(A -> B)   -> F A -> F B   // Map         
+
+`Monads` have a Bind, which needs a Join & Map:
+F (F A) -> F A             // Join (aka `flatten`. "Take a box out of a box")
+(A -> F B) -> F A -> F B   // Join . Map === Bind   (aka `flatMap`) 
 *
 
 /* -------------------------------------------------------------------------- */
@@ -80,7 +84,7 @@ Get type of Join.Map, without involving 'f':
     Join:                             F F B   -> F B
 Bind=Join.Map: (A -> F B)   -> F A            -> F B     // Apply Join to the result of Map.
 
-Get type of Join.Map, subbing in the concrete types for 'f':
+Get type of Join.Map, subbing in concrete types for 'f':
     f:          A -> [F B]
     Map:       (A -> [B])   -> F A -> F [B]
     Map(f):                    F A -> F [F B]            // Sub `f`, thus sub `[F B]` into `[B]`.
@@ -95,14 +99,14 @@ Bind=Join.Map: (A -> F B)   -> F A ->   F B              // Curry f.
 
 type Data<T> = { tag: 'some'; value: T } | { tag: 'none' };
 
-type FlattenOnce<T> = T extends Optional<infer S> ? Optional<S> : Optional<T>;
+type Flatten<T> = T extends Optional<infer S> ? Optional<S> : Optional<T>;
 type FlattenAll<T> = T extends Optional<infer S> ? FlattenAll<S> : Optional<T>;
 
 class Optional<T> {
   private constructor(private readonly data: Data<T>) {}
 
   /* ---------------------------------- Pure ---------------------------------- */
-  // Pure: A -> F A
+  // Pure: A -> F A                  "Put a value in a box"
   static some<T>(t: T): Optional<T> {
     return new Optional({ tag: 'some', value: t });
   }
@@ -113,14 +117,14 @@ class Optional<T> {
   }
 
   /* --------------------------------- Extract -------------------------------- */
-  // Extract: F A -> A                 "removes an F from F A"
+  // Extract: F A -> A                "Take a value out of a box"
   getValue(): T | undefined {
     return this.data.tag === 'some' ? this.data.value : undefined;
   }
 
   /* --------------------------- Join (aka Flatten) --------------------------- */
-  // Join: F (F A) -> F A               "removes an F from F F A")
-  private flattenOnce(): FlattenOnce<T> {
+  // Join: F (F A) -> F A               "Take a box out of a box")
+  flatten(): Flatten<T> {
     if (this.data.tag === 'some' && this.data.value instanceof Optional) {
       return this.data.value as any;
     } else {
@@ -130,9 +134,9 @@ class Optional<T> {
 
   // Flatten recursively.
   // F F F F F A -> F A
-  flatten(): FlattenAll<T> {
+  flattenAll(): FlattenAll<T> {
     if (this.data.tag === 'some' && this.data.value instanceof Optional) {
-      return this.data.value.flatten() as any;
+      return this.data.value.flattenAll() as any;
     } else {
       return this as any;
     }
@@ -155,7 +159,7 @@ class Optional<T> {
   // Pure.f: A -> F B        `Pure.f` === `\x => Pure.f(x)`
   //
   // Bind: (A -> F B) -> F A -> F B
-  // Bind[\x => Pure.f(x)] = F A -> F B
+  // Map === Bind[\x => Pure.f(x)] = F A -> F B
   map_2<B>(fn: (t: T) => B): Optional<B> {
     return this.flatMap((t) => Optional.some(fn(t)));
   }
@@ -178,7 +182,7 @@ class Optional<T> {
   // Join: F F A -> F A
   // Bind === Join.Map2: (A -> F B) -> F A -> F B
   flatMap_2<B>(fn: (t: T) => Optional<B>): Optional<B> {
-    return this.map(fn).flattenOnce();
+    return this.map(fn).flatten();
   }
 
   /* ---------------------------------- Utils --------------------------------- */
