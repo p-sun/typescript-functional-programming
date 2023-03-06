@@ -9,25 +9,44 @@
 */
 
 /* -------------------------------------------------------------------------- */
-/*                                   Monads                                   */
+/*                                   Monoid                                   */
+/* -------------------------------------------------------------------------- */
+/*
+A monoid has `empty` and `append`.
+empty: A			
+append: A -> A -> A  
+
+Law of Identity: “Appending an empty function does nothing to element A.”
+append(empty, A)
+append(A, empty)
+
+Law of associativity:
+append(append(A, B), C) === append(A, append(B, C))
+*/
+
+/* -------------------------------------------------------------------------- */
+/*                                   Monad                                    */
 /* -------------------------------------------------------------------------- */
 /*
 Monads is a pattern to compose functions that return values wrapped in a type.
-'F A' is a monad type constructor, like a box that wraps around a value of type A.
+'F A' is a monad type constructor, it's like a box that wraps around a value of type A.
 
 A -> A                     // Homogeneous functions (includes F A -> F A)
 
-F A -> A                   // Extract ("Take a value out of a box")
+F A -> A                   // Extract   "Take a value out of a box"
 
-A -> F A                   // Pure ("Put a value in a box")
-F A -> F (F A)             // Duplicate ("Put a box around a box")
+A -> F A                   // Pure      "Put a value in a box"
+F A -> F (F A)             // Duplicate "Put a box around a box"
 
 `Functors` have a Map, which needs Pure:
-(A -> B)   -> F A -> F B   // Map         
+(A -> B)   -> F A -> F B   // Map       "Transform a value inside a box"
 
 `Monads` have a Bind, which needs Join & Map:
-F (F A) -> F A             // Join (aka `flatten`. "Take a box out of a box")
+F (F A) -> F A             // Join (aka `flatten`) "Take a box out of a box"
 (A -> F B) -> F A -> F B   // Join . Map === Bind   (aka `flatMap`) 
+
+`Applicatives` have an Apply, which needs Pure OR Map:
+F (A -> B) -> F A -> F B   // Apply "Take a function out of a box and apply it to a value inside a box"
 *
 
 /* -------------------------------------------------------------------------- */
@@ -48,6 +67,11 @@ export default function run() {
     .flatMap(parse) // Optional<[number, number]>           Optional(none)
     .flatMap(divide); // Optional<number>                   Optional(none)
   console.log(`"99,aaa": ${r2}}`); // Optional(none)
+
+  const r3 = Optional.some(1234) // Optional<number>
+    .apply(Optional.some((n) => `n:${n}`)) // Optional<(n: number) => string>
+    .apply(Optional.some((s) => s === 'n:1234')); // Optional(boolean)
+  console.log(`Optional(1234) apply": ${r3}`); // Optional(true)
 }
 
 // A -> F B
@@ -165,12 +189,53 @@ class Optional<T> {
 
   // Build 'Bind' with 'Join.Map' without `this.data`.
   // Note that we don't need `this.data`.
-  // Map: (A -> B) -> F A -> F B
-  // Map2: (A -> F B) -> F A -> F F B     // Make Map2's first param to look like Bind's first param.
+  // Map:  (A -> B) -> F A -> F B
+  // Map2: (A -> F B) -> F A -> F F B
+  //       Make Map2's first param to look like Bind's first param.
   // Join: F F A -> F A
   // Bind === Join.Map2: (A -> F B) -> F A -> F B
   flatMap_2<B>(fn: (t: T) => Optional<B>): Optional<B> {
     return this.map(fn).flatten();
+  }
+  /* ---------------------------------- Apply --------------------------------- */
+  // Build 'apply' from scratch.
+  // Apply: F (A -> B) -> F A -> F B
+  apply<B>(optionalF: Optional<(t: T) => B>): Optional<B> {
+    if (this.data.tag === 'some' && optionalF.data.tag === 'some') {
+      return Optional.some(optionalF.data.value(this.data.value));
+    } else {
+      return this as any;
+    }
+  }
+
+  // Build 'Apply' from 'Map'.
+  // Apply: F (A -> B) -> F A -> F B
+  apply_2<B>(optionalF: Optional<(t: T) => B>): Optional<B> {
+    if (optionalF.data.tag === 'some') {
+      return this.map(optionalF.data.value);
+    } else {
+      return this as any;
+    }
+  }
+
+  // Build 'Apply' with 'Bind' and 'Map' without `this.data`.
+  //
+  // f = (A -> B)
+  // Optional(f) = F f = F (A->B)
+  // Map: (A -> B) -> F A -> F B
+  //
+  // Bind:  (A -> F B) -> F A -> F B
+  // Bind2: (f -> F B) -> F f -> F B // Bind in Optional<f>
+  // Apply: \F f => Bind2.Map(\f => Map(f))
+  //    === (F f -> F B) -> F F f -> F B    (A -> B) -> F A -> F B
+  //    === How ??????
+  //    === f          -> F A -> F B
+  //    === F (A -> B) -> F A -> F B
+  // Apply: F (A -> B) -> F A -> F B
+  apply_3<B>(optional_f: Optional<(t: T) => B>): Optional<B> {
+    // (f) => this.map(f):      (f: (t: T) => B) => Optional<B>     (A -> B) -> F B
+    // Use arrow fn `(f) => this.map(f)`, otherwise we'd lose the `this` context.
+    return optional_f.flatMap((f) => this.map(f));
   }
 
   /* ---------------------------------- Utils --------------------------------- */
