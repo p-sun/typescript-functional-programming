@@ -3,6 +3,7 @@ import runLongestBranch_ForLoop from './src/FunctionalProgramming/2B_DS_Tree_Lon
 import runLongestBranch_Reduce from './src/FunctionalProgramming/2C_DS_Tree_LongestBranch_Reduce';
 import runLongestBranch_Lazy from './src/FunctionalProgramming/2D_DS_Tree_LongestBranch_Lazy';
 import runStream from './src/FunctionalProgramming/3B_Stream';
+import runOptionalMonad from './src/FunctionalProgramming/4A_OptionalMonad';
 import runMonadStack from './src/FunctionalProgramming/4B_StateMonad_Stack';
 import runEvaluatorTests from './src/MathEvaluator/__tests/EvaluatorTests';
 import runParserCombinatorYouTube from './src/ParserCombinator/OtherImplementations/ParserEpisode4';
@@ -29,6 +30,7 @@ const Run = {
   },
   FPBasics: {
     Currying: require('./src/FunctionalProgramming/1B_Currying'),
+    runOptionalMonad: runOptionalMonad,
     runMonadStack: runMonadStack,
   },
   ParserCombinator: {
@@ -44,6 +46,7 @@ const Run = {
 // Run.FPDataStructures.runStack();
 // Run.FPBasics.runMonadStack();
 // Run.JSLanguage.runThisAndBind();
+Run.FPBasics.runOptionalMonad();
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
