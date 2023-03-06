@@ -22,10 +22,10 @@ F A -> A                   // Extract ("Take a value out of a box")
 A -> F A                   // Pure ("Put a value in a box")
 F A -> F (F A)             // Duplicate ("Put a box around a box")
 
-`Functors` have a Map, which needs Extract & Pure:
+`Functors` have a Map, which needs Pure:
 (A -> B)   -> F A -> F B   // Map         
 
-`Monads` have a Bind, which needs a Join & Map:
+`Monads` have a Bind, which needs Join & Map:
 F (F A) -> F A             // Join (aka `flatten`. "Take a box out of a box")
 (A -> F B) -> F A -> F B   // Join . Map === Bind   (aka `flatMap`) 
 *
@@ -99,47 +99,25 @@ Bind=Join.Map: (A -> F B)   -> F A ->   F B              // Curry f.
 
 type Data<T> = { tag: 'some'; value: T } | { tag: 'none' };
 
-type Flatten<T> = T extends Optional<infer S> ? Optional<S> : Optional<T>;
-type FlattenAll<T> = T extends Optional<infer S> ? FlattenAll<S> : Optional<T>;
-
 class Optional<T> {
   private constructor(private readonly data: Data<T>) {}
 
   /* ---------------------------------- Pure ---------------------------------- */
-  // Pure: A -> F A                  "Put a value in a box"
+  // Pure: A -> F A                     "Put a value in a box"
+  // Duplicate: F A -> F (F A)          "Put a box around a box"
   static some<T>(t: T): Optional<T> {
     return new Optional({ tag: 'some', value: t });
   }
 
-  // Pure: A -> F A
+  // Pure: A -> F A                      "Put a value in a box"
   static none<T>(): Optional<T> {
     return new Optional<T>({ tag: 'none' });
   }
 
   /* --------------------------------- Extract -------------------------------- */
-  // Extract: F A -> A                "Take a value out of a box"
+  // Extract: F A -> A                  "Take a value out of a box"
   getValue(): T | undefined {
     return this.data.tag === 'some' ? this.data.value : undefined;
-  }
-
-  /* --------------------------- Join (aka Flatten) --------------------------- */
-  // Join: F (F A) -> F A               "Take a box out of a box")
-  flatten(): Flatten<T> {
-    if (this.data.tag === 'some' && this.data.value instanceof Optional) {
-      return this.data.value as any;
-    } else {
-      return this as any;
-    }
-  }
-
-  // Flatten recursively.
-  // F F F F F A -> F A
-  flattenAll(): FlattenAll<T> {
-    if (this.data.tag === 'some' && this.data.value instanceof Optional) {
-      return this.data.value.flattenAll() as any;
-    } else {
-      return this as any;
-    }
   }
 
   /* ----------------------------------- Map ---------------------------------- */
@@ -153,7 +131,7 @@ class Optional<T> {
     }
   }
 
-  // Build Map from Bind & Pure.    e.g. Bind = flatMap, Pure = some.
+  // Build Map from Bind & Pure without `this.data`. Bind = flatMap, Pure = some.
   // Pure: A -> F A
   // f: A -> B
   // Pure.f: A -> F B        `Pure.f` === `\x => Pure.f(x)`
@@ -162,6 +140,16 @@ class Optional<T> {
   // Map === Bind[\x => Pure.f(x)] = F A -> F B
   map_2<B>(fn: (t: T) => B): Optional<B> {
     return this.flatMap((t) => Optional.some(fn(t)));
+  }
+
+  /* --------------------------- Join (aka Flatten) --------------------------- */
+  // Join: F (F A) -> F A               "Take a box out of a box"
+  flatten(): T extends Optional<infer S> ? Optional<S> : Optional<T> {
+    if (this.data.tag === 'some' && this.data.value instanceof Optional) {
+      return this.data.value as any;
+    } else {
+      return this as any;
+    }
   }
 
   /* ------------------------------ Bind/FlatMap ------------------------------ */
@@ -175,7 +163,7 @@ class Optional<T> {
     }
   }
 
-  // Alternatively, build 'Bind' with 'Join.Map'.
+  // Build 'Bind' with 'Join.Map' without `this.data`.
   // Note that we don't need `this.data`.
   // Map: (A -> B) -> F A -> F B
   // Map2: (A -> F B) -> F A -> F F B     // Make Map2's first param to look like Bind's first param.
