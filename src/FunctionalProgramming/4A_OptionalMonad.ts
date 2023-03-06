@@ -197,6 +197,7 @@ class Optional<T> {
   flatMap_2<B>(fn: (t: T) => Optional<B>): Optional<B> {
     return this.map(fn).flatten();
   }
+
   /* ---------------------------------- Apply --------------------------------- */
   // Build 'apply' from scratch.
   // Apply: F (A -> B) -> F A -> F B
@@ -223,14 +224,7 @@ class Optional<T> {
   // f = (A -> B)
   // Optional(f) = F f = F (A->B)
   // Map: (A -> B) -> F A -> F B
-  //
-  // Bind:  (A -> F B) -> F A -> F B
-  // Bind2: (f -> F B) -> F f -> F B // Bind in Optional<f>
-  // Apply: \F f => Bind2.Map(\f => Map(f))
-  //    === (F f -> F B) -> F F f -> F B    (A -> B) -> F A -> F B
-  //    === How ??????
-  //    === f          -> F A -> F B
-  //    === F (A -> B) -> F A -> F B
+  // Bind: (A -> F B) -> F A -> F B
   // Apply: F (A -> B) -> F A -> F B
   apply_3<B>(optional_f: Optional<(t: T) => B>): Optional<B> {
     // (f) => this.map(f):      (f: (t: T) => B) => Optional<B>     (A -> B) -> F B
