@@ -63,7 +63,10 @@ export class State<S, A> {
   // Extract state from background (bg) to foreground (fg)
   //                 bg  -> [fg, result]
   getState(): State<S, S> {
-    return new State((s) => [s, s]);
+    return new State((s) => {
+      const [newS, a] = this.runState(s);
+      return [newS, newS];
+    });
   }
 
   toString(): string {

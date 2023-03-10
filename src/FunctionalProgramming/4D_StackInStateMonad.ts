@@ -60,6 +60,14 @@ namespace Method1 {
         return n;
       });
     console.log(`s4: ${s4.run(stack0)}`); // s4: [],undefined
+
+    const s5 = emptyState
+      .bind((_) => push(3))
+      .bind((_) => push(4))
+      .bind((_) => push(5)) //  [5, 4, 3],5
+      // Map the S in State<S, A>
+      .bind((_) => new State((s) => [s.map((n) => n * 10), undefined]));
+    console.log(`s5: ${s5.run(stack0)}`); // s5: [50, 40, 30],undefined
   }
 }
 /* -------------------------------------------------------------------------- */
