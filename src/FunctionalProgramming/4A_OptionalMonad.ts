@@ -13,12 +13,12 @@
 /* -------------------------------------------------------------------------- */
 /*
 A monoid has `empty` and `append`.
-empty: A			
-append: A -> A -> A  
+empty() -> A			
+append(A, A) -> A
 
 Law of Identity: “Appending an empty function does nothing to element A.”
-append(empty, A)
-append(A, empty)
+append(empty, A) === A
+append(A, empty) === A
 
 Law of associativity:
 append(append(A, B), C) === append(A, append(B, C))
@@ -38,15 +38,15 @@ F A -> A                   // Extract   "Take a value out of a box"
 A -> F A                   // Pure      "Put a value in a box"
 F A -> F (F A)             // Duplicate "Put a box around a box"
 
-`Functors` have a Map, which needs Pure:
+`Functors` have a Map + Pure:
 (A -> B)   -> F A -> F B   // Map       "Transform a value inside a box"
-
-`Monads` have a Bind, which needs Join & Map:
-F (F A) -> F A             // Join (aka `flatten`) "Take a box out of a box"
-(A -> F B) -> F A -> F B   // Join . Map === Bind   (aka `flatMap`) 
 
 `Applicatives` have an Apply, which needs Pure OR Map:
 F (A -> B) -> F A -> F B   // Apply "Take a function out of a box and apply it to a value inside a box"
+
+`Monads` have a Bind, which needs Join & Map. Functor < Applicative < Monad.
+F (F A) -> F A             // Join (aka `flatten`) "Take a box out of a box"
+(A -> F B) -> F A -> F B   // Join . Map === Bind   (aka `flatMap`) 
 *
 
 /* -------------------------------------------------------------------------- */
@@ -57,15 +57,15 @@ F (A -> B) -> F A -> F B   // Apply "Take a function out of a box and apply it t
 
 export default function run() {
   const r1 = Optional.some('99,3') // Optional<string>      "99,3"
-    .flatMap(split) // Optional<[string, string]>           ["99", "3"]
-    .flatMap(parse) // Optional<[number, number]>           [99, 3]
-    .flatMap(divide); // Optional<number>                   33
+    .bind(split) // Optional<[string, string]>              ["99", "3"]
+    .bind(parse) // Optional<[number, number]>              [99, 3]
+    .bind(divide); // Optional<number>                      33
   console.log(`"99,3": ${r1}}`); // Optional(33)
 
   const r2 = Optional.some('99,aaa') // Optional<string>    "99,aaa"
-    .flatMap(split) // Optional<[string, string]>           ["99", "aaa"]
-    .flatMap(parse) // Optional<[number, number]>           Optional(none)
-    .flatMap(divide); // Optional<number>                   Optional(none)
+    .bind(split) // Optional<[string, string]>              ["99", "aaa"]
+    .bind(parse) // Optional<[number, number]>              Optional(none)
+    .bind(divide); // Optional<number>                      Optional(none)
   console.log(`"99,aaa": ${r2}}`); // Optional(none)
 
   const r3 = Optional.some(1234) // Optional<number>
@@ -75,6 +75,7 @@ export default function run() {
 }
 
 // A -> F B
+// "100,5" -> Optional(["100", "5"])
 function split(s: string): Optional<[string, string]> {
   const r = s.split(',');
   const left = r[0];
@@ -85,6 +86,7 @@ function split(s: string): Optional<[string, string]> {
 }
 
 // A -> F B
+// ["100", "5"] -> Optional([100, 3])
 function parse(strs: [string, string]): Optional<[number, number]> {
   const x = parseInt(strs[0]);
   const y = parseInt(strs[1]);
@@ -92,6 +94,7 @@ function parse(strs: [string, string]): Optional<[number, number]> {
 }
 
 // A -> F B
+// [100, 5] -> Optional(20)
 function divide(nums: [number, number]): Optional<number> {
   const [x, y] = nums;
   return y !== 0 ? Optional.some(x / y) : Optional.none();
@@ -100,7 +103,7 @@ function divide(nums: [number, number]): Optional<number> {
 /* -------------------------------------------------------------------------- */
 /*                     flatMap_2: Make Bind with Join.Map                     */
 /* -------------------------------------------------------------------------- */
-/* 2 ways of getting the type of type of Bind === Join.Map:
+/* 2 notation methods to get the type of type of Bind === Join.Map:
     
 Get type of Join.Map, without involving 'f':
     Map:       (A -> [B])   -> F A -> F [B]              // Add [braces] to make [B] easier to see.
@@ -146,7 +149,7 @@ class Optional<T> {
 
   /* ----------------------------------- Map ---------------------------------- */
   // Build Map from scratch.
-  // Map: (A -> B) -> F A -> F B
+  // Map: F A -> (A -> B) -> F B
   map<B>(fn: (t: T) => B): Optional<B> {
     if (this.data.tag === 'some') {
       return Optional.some(fn(this.data.value));
@@ -160,15 +163,15 @@ class Optional<T> {
   // f: A -> B
   // Pure.f: A -> F B        `Pure.f` === `\x => Pure.f(x)`
   //
-  // Bind: (A -> F B) -> F A -> F B
+  // Bind: F A -> (A -> F B) -> F B
   // Map === Bind[\x => Pure.f(x)] = F A -> F B
   map_2<B>(fn: (t: T) => B): Optional<B> {
-    return this.flatMap((t) => Optional.some(fn(t)));
+    return this.bind((t) => Optional.some(fn(t)));
   }
 
   /* --------------------------- Join (aka Flatten) --------------------------- */
-  // Join: F (F A) -> F A               "Take a box out of a box"
-  flatten(): T extends Optional<infer S> ? Optional<S> : Optional<T> {
+  // Join: F (F A) -> F A               "Take a box out of a box". (aka 'flatten'.)
+  join(): T extends Optional<infer S> ? Optional<S> : Optional<T> {
     if (this.data.tag === 'some' && this.data.value instanceof Optional) {
       return this.data.value as any;
     } else {
@@ -177,9 +180,9 @@ class Optional<T> {
   }
 
   /* ------------------------------ Bind/FlatMap ------------------------------ */
-  // Build Bind from scratch.
-  // Bind: (A -> F B) -> F A -> F B
-  flatMap<B>(fn: (t: T) => Optional<B>): Optional<B> {
+  // Build Bind from scratch. (aka 'flatMap'.)
+  // Bind: F A -> (A -> F B) -> F B
+  bind<B>(fn: (t: T) => Optional<B>): Optional<B> {
     if (this.data.tag === 'some') {
       return fn(this.data.value);
     } else {
@@ -189,18 +192,18 @@ class Optional<T> {
 
   // Build 'Bind' with 'Join.Map' without `this.data`.
   // Note that we don't need `this.data`.
-  // Map:  (A -> B) -> F A -> F B
-  // Map2: (A -> F B) -> F A -> F F B
+  // Map:  F A -> (A -> B) -> F B
+  // Map2: F A -> (A -> F B) -> F F B
   //       Make Map2's first param to look like Bind's first param.
   // Join: F F A -> F A
-  // Bind === Join.Map2: (A -> F B) -> F A -> F B
-  flatMap_2<B>(fn: (t: T) => Optional<B>): Optional<B> {
-    return this.map(fn).flatten();
+  // Bind === Join.Map2:  F A -> (A -> F B) ->F B
+  bind_2<B>(fn: (t: T) => Optional<B>): Optional<B> {
+    return this.map(fn).join();
   }
 
   /* ---------------------------------- Apply --------------------------------- */
   // Build 'apply' from scratch.
-  // Apply: F (A -> B) -> F A -> F B
+  // Apply: F A -> F (A -> B) -> F B
   apply<B>(optionalF: Optional<(t: T) => B>): Optional<B> {
     if (this.data.tag === 'some' && optionalF.data.tag === 'some') {
       return Optional.some(optionalF.data.value(this.data.value));
@@ -210,7 +213,7 @@ class Optional<T> {
   }
 
   // Build 'Apply' from 'Map'.
-  // Apply: F (A -> B) -> F A -> F B
+  // Apply: F A -> F (A -> B) -> F B
   apply_2<B>(optionalF: Optional<(t: T) => B>): Optional<B> {
     if (optionalF.data.tag === 'some') {
       return this.map(optionalF.data.value);
@@ -220,16 +223,24 @@ class Optional<T> {
   }
 
   // Build 'Apply' with 'Bind' and 'Map' without `this.data`.
-  //
-  // f = (A -> B)
-  // Optional(f) = F f = F (A->B)
-  // Map: (A -> B) -> F A -> F B
-  // Bind: (A -> F B) -> F A -> F B
-  // Apply: F (A -> B) -> F A -> F B
+  // let `f = (A -> B)`                 (1)
+  // let `fa = F A`
+
+  // Map: F A -> (A -> B) -> F B            // Definition of Map
+  // Map fa: (A -> B) -> F B                // curry the `F A`
+  // Map fa: f -> F B                   (2) // Sub (1) to make the "Kleisli arrow"
+
+  // Bind: F A -> (A -> F B) -> F B         // Definition of Bind
+  // Bind2: F f -> (f -> F B) -> F B        // Sub A with f -- still Bind.
+  // Bind2: F f -> (Map fa) -> F B          // Sub (2)
+  // Bind2 (Map fa): F f -> F B             // Curry `Map fa` and pass to Bind2
+  // Bind2 (Map fa): F (A -> B) -> F B      // Sub back (1)
+  // Bind2 (Map fa) === Apply fa
+  // Apply: F A -> F (A -> B) -> F B
   apply_3<B>(optional_f: Optional<(t: T) => B>): Optional<B> {
-    // (f) => this.map(f):      (f: (t: T) => B) => Optional<B>     (A -> B) -> F B
-    // Use arrow fn `(f) => this.map(f)`, otherwise we'd lose the `this` context.
-    return optional_f.flatMap((f) => this.map(f));
+    // `(f) => this.map(f)`: (f: (t: T) => B) => Optional<B>     (A -> B) -> F B
+    // Fyi. Use arrow fn `(f) => this.map(f)`, otherwise we'd lose the `this` context.
+    return optional_f.bind((f) => this.map(f));
   }
 
   /* ---------------------------------- Utils --------------------------------- */

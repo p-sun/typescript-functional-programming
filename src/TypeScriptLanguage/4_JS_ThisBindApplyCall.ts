@@ -3,7 +3,7 @@ Function.prototype.bind():
   * `this` context:
     * Non-arrow functions have their own `this` value, from the __function context__.
       i.e. Where the function is defined.
-    * Arrow functions maintain the value of `this` from the __caller context__.
+    * Arrow functions maintain the value of `this` from the outermost __caller context__.
   
   * 'bind' only works on non-arrow functions.
   * Use non-arrow functions if you need `object.method()` syntax
