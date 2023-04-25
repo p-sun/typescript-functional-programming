@@ -39,11 +39,55 @@ const streamUsingLazy = (arr: readonly number[]) => {
 };
 
 /* -------------------------------------------------------------------------- */
+/*                       Stream Using Yielding Promises                       */
+/* -------------------------------------------------------------------------- */
+// Note! We're using async/await with generators/iterators.
+// await -- promises
+// yield -- generators/iterators
+
+function promiseToAddOne(val: number) {
+  return new Promise<number>((resolve, _) => {
+    setTimeout(() => {
+      resolve(val + 1);
+    }, 300);
+  });
+}
+
+class Counter {
+  private count = 0;
+  private promise: Promise<number> | undefined;
+
+  constructor(private readonly max: number) {}
+
+  async *makeIterator() {
+    this.promise = promiseToAddOne(this.count);
+    while (this.count < this.max && this.promise !== undefined) {
+      this.count = await this.promise;
+      this.promise = promiseToAddOne(this.count);
+      yield this.count;
+    }
+  }
+
+  cancel() {
+    this.promise = undefined;
+  }
+}
+
+async function runCounterWithPromises() {
+  const stream = new Counter(6).makeIterator();
+  let next = await stream.next();
+  while (!next.done) {
+    console.log('Counter:', next.value);
+    next = await stream.next();
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /*                               Stream Examples                              */
 /* -------------------------------------------------------------------------- */
-// Conclusion: Using yield is much faster than using custom Lazy class.
 
-export default function run() {
+// Conclusion: Using yield is much faster than using custom Lazy class.
+function runStreamComparison() {
   const repeat = 100;
   const length = 100000;
   const arr = Object.freeze(Array.from({ length: length }, (_, i) => i));
@@ -67,4 +111,9 @@ export default function run() {
       next = stream.next();
     }
   });
+}
+
+export default function run() {
+  runCounterWithPromises();
+  runStreamComparison();
 }

@@ -47,8 +47,9 @@ const Run = {
   },
 };
 
-Run.FPBasics.runStackInStateMonad();
+// Run.FPBasics.runStackInStateMonad();
 // Run.FPBasics.runStackMonad();
+Run.FPDataStructures.runStream();
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
