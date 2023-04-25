@@ -42,8 +42,26 @@ const streamUsingLazy = (arr: readonly number[]) => {
 /*                       Stream Using Yielding Promises                       */
 /* -------------------------------------------------------------------------- */
 // Note! We're using async/await with generators/iterators.
-// await -- promises
-// yield -- generators/iterators
+// async/await -- promises
+// yield, function* -- generators/iterators
+
+class Counter {
+  private count = 0;
+  private promise: Promise<number>;
+
+  constructor(private readonly max: number) {
+    this.promise = promiseToAddOne(this.count);
+  }
+
+  // Returns AsyncGenerator<number, void, unknown>
+  async *makeInterator() {
+    while (this.count < this.max) {
+      this.count = await this.promise;
+      this.promise = promiseToAddOne(this.count);
+      yield this.count;
+    }
+  }
+}
 
 function promiseToAddOne(val: number) {
   return new Promise<number>((resolve, _) => {
@@ -53,32 +71,21 @@ function promiseToAddOne(val: number) {
   });
 }
 
-class Counter {
-  private count = 0;
-  private promise: Promise<number> | undefined;
+async function runCounters() {
+  // Use 'for await' to count from 1...6
+  for await (const n of new Counter(6).makeInterator()) {
+    console.log('Counter for-loop:', n);
+  }
 
-  constructor(private readonly max: number) {}
-
-  async *makeIterator() {
-    this.promise = promiseToAddOne(this.count);
-    while (this.count < this.max && this.promise !== undefined) {
-      this.count = await this.promise;
-      this.promise = promiseToAddOne(this.count);
-      yield this.count;
+  // Use 'while' to count from 1...6, and stop Counter externally
+  const counter = new Counter(100).makeInterator();
+  let current = await counter.next();
+  while (!current.done) {
+    if (current.value >= 6) {
+      counter.return();
     }
-  }
-
-  cancel() {
-    this.promise = undefined;
-  }
-}
-
-async function runCounterWithPromises() {
-  const stream = new Counter(6).makeIterator();
-  let next = await stream.next();
-  while (!next.done) {
-    console.log('Counter:', next.value);
-    next = await stream.next();
+    console.log('Counter while-loop:', current.value);
+    current = await counter.next();
   }
 }
 
@@ -114,6 +121,6 @@ function runStreamComparison() {
 }
 
 export default function run() {
-  runCounterWithPromises();
+  runCounters();
   runStreamComparison();
 }
