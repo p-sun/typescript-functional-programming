@@ -8,6 +8,7 @@ import runStackMonad from './src/FunctionalProgramming/4B_StackMonad';
 import runStateMonad from './src/FunctionalProgramming/4C_StateMonad';
 import runStackInStateMonad from './src/FunctionalProgramming/4D_StackInStateMonad';
 import runResultADT from './src/FunctionalProgramming/5A_ResultADT';
+import runListADT from './src/FunctionalProgramming/5B_ListADT';
 import runEvaluatorTests from './src/MathEvaluator/__tests/EvaluatorTests';
 import runParserCombinatorYouTube from './src/ParserCombinator/OtherImplementations/ParserEpisode4';
 import runParserCombinator from './src/ParserCombinator/ParserCombinator';
@@ -22,6 +23,7 @@ const Run = {
   JSLanguage: {
     // runThisCallApplyBind: require('./src/TypeScriptLanguage/4_JS_ThisBindApplyCall'),
     runResultADT: runResultADT,
+    runListADT: runListADT,
   },
   FPDataStructures: {
     runStack: runStack,
@@ -52,7 +54,8 @@ const Run = {
 // Run.FPBasics.runStackInStateMonad();
 // Run.FPBasics.runStackMonad();
 // Run.FPDataStructures.runStream();
-Run.JSLanguage.runResultADT();
+// Run.JSLanguage.runResultADT();
+Run.JSLanguage.runListADT();
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
