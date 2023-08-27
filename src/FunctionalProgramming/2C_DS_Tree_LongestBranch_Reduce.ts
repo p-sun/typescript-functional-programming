@@ -21,8 +21,8 @@ function longestBranchLength(node: FPTree): number {
 /*        Longest Branch - Easiest FP Way, also accumulating Branch name      */
 /* -------------------------------------------------------------------------- */
 
-type Branch = { path: string; length: number };
-const EmptyBranch: Branch = { path: '', length: 0 };
+const EmptyBranch = { path: '', length: 0 };
+type Branch = typeof EmptyBranch;
 
 // Easier to understand because map and reduce are separate steps.
 // May use more heap memory because it creates an array of Branches after map.

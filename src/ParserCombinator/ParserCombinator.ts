@@ -1,3 +1,19 @@
+/**
+Achieved personal learning goals:
+
+- Recursed through a parse tree, where input and output of CombinatorParser is different.
+- Implemented regex r* and r+. 
+  (repeat and repeatOnceOrMore parsers with specialized output structure to allow any number of repeats.)
+- Implemented regex (w|wo)o(r*)l `worrrld`. 
+  (Combine many parsers together. And, Or, and Repeat parsers can work together in any combination).
+- Figured out 3 ways to chain a bunch of parsers together, where the results remain fully typed. i.e.`chain`, add, sequence all do the same thing.
+  Inpired by a YouTube video, and microsoft/ts-parsec.
+- The Result in CombinatorParser<Kind, Result> is always typed, with the result in a convenient tree
+  format when there are parsers inside parsers, inspired by a YouTube parser combinator series.
+- Used the new ParserCombinator to remake the tokenizer for math evaluator to 
+  calculate expressions like `( ( 2 + 3 ) * ( 9 - 21 * 3 ) * 5 ) * 4'.
+ */
+
 /* -------------------------------------------------------------------------- */
 /*                                    Token                                   */
 /* -------------------------------------------------------------------------- */
