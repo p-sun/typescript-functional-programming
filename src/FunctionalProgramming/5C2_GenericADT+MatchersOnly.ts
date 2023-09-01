@@ -3,8 +3,8 @@ type ADTWithTag<
   Tag extends T['tag']
 > = T extends { tag: Tag } ? T : never;
 
-type ADTMatchers<Def extends Record<string, unknown> & { tag: string }> = {
-  [Tag in Def['tag']]: (adt: ADTWithTag<Def, Tag>) => unknown;
+type ADTMatchers<T extends Record<string, unknown> & { tag: string }> = {
+  [Tag in T['tag']]: (adt: ADTWithTag<T, Tag>) => unknown;
 };
 
 type ResultsFromMatchers_<
@@ -15,9 +15,9 @@ type ResultsFromMatchers<T extends Record<string, unknown>> =
   ResultsFromMatchers_<T, keyof T>;
 
 function matchADT<
-  Def extends Record<string, unknown> & { tag: string },
-  Matchers extends ADTMatchers<Def>
->(adt: Def, matchers: Matchers): ResultsFromMatchers<Matchers> {
+  T extends Record<string, unknown> & { tag: string },
+  Matchers extends ADTMatchers<T>
+>(adt: T, matchers: Matchers): ResultsFromMatchers<Matchers> {
   // @ts-expect-error
   return matchers[adt.tag](adt);
 }
