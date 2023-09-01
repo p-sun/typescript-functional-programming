@@ -44,6 +44,7 @@ const successADT = {
 } as NetworkResponse;
 
 // Test: adt is of the correct type AND
+// AND the result type is a union of the results of the matchers.
 const a0 = matchADT(successADT, {
   success: (adt) => adt.code,
   failure: (adt) => `adt failed with message ${adt.message}`,

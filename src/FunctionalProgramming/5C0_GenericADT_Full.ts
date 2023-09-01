@@ -83,8 +83,16 @@ function matchADT<
   Def extends Record<string, unknown> & { tag: string },
   Matchers extends ADTMatchers<Def>
 >(adt: Def, matchers: Matchers): ResultsFromMatchers<Matchers> {
-  // @ts-expect-error
+  // @ts-expect-error: 'string' can't be used to index type 'ADTMatchers<Def>'.
   return matchers[adt.tag](adt);
+}
+
+function matchADTSome<
+  Def extends Record<string, unknown> & { tag: string },
+  Matchers extends Partial<ADTMatchers<Def>>
+>(adt: Def, matchers: Matchers): ResultsFromMatchers<Matchers> {
+  // @ts-expect-error: 'string' can't be used to index type 'ADTMatchers<Def>'.
+  return matchers[adt.tag]?.(adt);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -106,10 +114,15 @@ export default function run() {
   });
   const a0_test: ASSERT<typeof a0, number | string> = true;
 
-  console.log('a0 success code:', a0);
-
   // @ts-expect-error: Property 'failure' is missing in type '{ success: () => number; }'
   const a1 = matchADT(successADT, {
-    success: () => 7,
+    success: (adt) => 777,
   });
+
+  const a2 = matchADTSome(successADT, {
+    success: (adt) => adt.code,
+  });
+
+  console.log('a0 success code:', a0); // 123456
+  console.log('a2 success code:', a2); // 123456
 }
