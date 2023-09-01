@@ -19,6 +19,36 @@ function hasNuts(flavor: IceCream): flavor is typeof nuttyFlavors[number] {
 }
 
 /* -------------------------------------------------------------------------- */
+/*             Use `keyof MyType` to constrain function parameters            */
+/* -------------------------------------------------------------------------- */
+
+type RGBColor = {
+  red: number;
+  green: number;
+  blue: number;
+};
+const cyan: RGBColor = {
+  red: 1,
+  green: 0,
+  blue: 1,
+};
+
+type RBGComponent = keyof RGBColor;
+// Can only assign ‘red’, ‘green’, or ‘blue’ here.
+const greenComponent: RBGComponent = 'green';
+
+function getComponent(c: RGBColor, comp: RBGComponent): number {
+  return c[comp];
+}
+
+function getComponent255(c: RGBColor, comp: RBGComponent) {
+  return getComponent(c, comp) * 255;
+}
+
+// you can only put 'red', 'green', or 'blue' here, awesome!!!
+getComponent255(cyan, 'red');
+
+/* -------------------------------------------------------------------------- */
 /*                      Extract constant values as types                      */
 /* -------------------------------------------------------------------------- */
 
@@ -52,36 +82,6 @@ type CatBreed = typeof allCats[CatName]['breed'];
 // Why would we want this? You can pass CatNames as a parameter to functions, instead of the whole Cat!
 const getCat = (name: CatName) => allCats[name];
 console.log(getCat('smoothie').age);
-
-type RGBColor = {
-  red: number;
-  green: number;
-  blue: number;
-};
-const cyan: RGBColor = {
-  red: 1,
-  green: 0,
-  blue: 1,
-};
-
-/* -------------------------------------------------------------------------- */
-/*             Use `keyof MyType` to constrain function parameters            */
-/* -------------------------------------------------------------------------- */
-
-type RBGComponent = keyof RGBColor;
-// Can only assign ‘red’, ‘green’, or ‘blue’ here.
-const greenComponent: RBGComponent = 'green';
-
-function getComponent(c: RGBColor, comp: RBGComponent): number {
-  return c[comp];
-}
-
-function getComponent255(c: RGBColor, comp: RBGComponent) {
-  return getComponent(c, comp) * 255;
-}
-
-// you can only put 'red', 'green', or 'blue' here, awesome!!!
-getComponent255(cyan, 'red');
 
 /* -------------------------------------------------------------------------- */
 /*           Union type before conditional `extends` is distributed           */
