@@ -141,3 +141,14 @@ type Promisify<T extends any[] | readonly any[]> = //
 type pf1 = Promisify<[string, boolean]>; // [Promise<string>, Promise<boolean>];
 type pf2 = Promisify<readonly [string, boolean]>; // readonly [Promise<string>, Promise<boolean>]
 type pf3 = Promisify<boolean[]>; // Promise<boolean>[]
+
+/* -------------------------------------------------------------------------- */
+/*                          `infer` after `extends`                           */
+/* -------------------------------------------------------------------------- */
+
+// `infer` an input type and use it in the output type.
+type BerryPrefix<T extends string> =
+  T extends `${infer Prefix extends string}berry` ? Prefix : never;
+type p0 = BerryPrefix<'strawberry' | 'blueberry' | 'melon'>; // "straw" | "blue"
+
+export default function run() {}

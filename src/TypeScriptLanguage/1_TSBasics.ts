@@ -54,3 +54,37 @@ const h = new Hamburger();
 // h.#hCheese // Not allowed
 // h['#hCheese'] // Not allowed
 // (h as any).#hCheese; // Not Allowed
+
+class Animal {
+  constructor(public name: string) {}
+
+  move(distanceInMeters: number = 0) {
+    console.log(`${this.name} moved ${distanceInMeters}m.`);
+  }
+}
+
+class Bird extends Animal {
+  constructor(name: string, public canFly: boolean) {
+    super(name);
+  }
+
+  fly() {
+    if (this.canFly) {
+      console.log('I can fly!');
+    } else {
+      console.log('I cannot fly!');
+    }
+  }
+}
+
+const bird = new Bird('Bird', true);
+bird.fly();
+bird.move(10);
+
+// throw new Error('This is an error');
+
+function forLoop() {
+  for (let i = 0; i < 5; i++) {
+    // const element = array[i];
+  }
+}
