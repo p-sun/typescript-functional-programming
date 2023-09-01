@@ -142,11 +142,11 @@ const u2_test: ASSERT<u2, u1_expected> = true;
 type IntersectionToUnion_<
   T extends Record<string, unknown>,
   K extends keyof T
-> = T[K];
+> = K extends unknown ? { [_ in K]: T[K] } : never;
 type IntersectionToUnion<T extends Record<string, unknown>> =
   IntersectionToUnion_<T, keyof T>;
-type iu0 = IntersectionToUnion<{ a: number; b: boolean }>;
-const iu0_test: ASSERT<iu0, string | boolean> = true;
+type iu0 = IntersectionToUnion<{ a: number; b: Int16Array }>;
+const iu0_test: ASSERT<iu0, { a: number } | { b: Int16Array }> = true;
 
 /* -------------------------------------------------------------------------- */
 /*                    Extract keys and values from a Record                   */
