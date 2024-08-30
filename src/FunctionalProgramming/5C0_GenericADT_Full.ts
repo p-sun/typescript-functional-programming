@@ -72,17 +72,16 @@ type ADTMatchers<T extends Record<string, unknown> & { tag: string }> = {
   [Tag in T['tag']]: (adt: ADTWithTag<T, Tag>) => unknown;
 };
 
-type ResultsFromMatchers_<
+type ReturnTypes_<
   T extends Record<string, unknown>,
   K extends keyof T
 > = T[K] extends (adt: any) => infer R ? R : never;
-type ResultsFromMatchers<T extends Record<string, unknown>> =
-  ResultsFromMatchers_<T, keyof T>;
+type ReturnTypes<T extends Record<string, unknown>> = ReturnTypes_<T, keyof T>;
 
 function matchADT<
   T extends Record<string, unknown> & { tag: string },
   Matchers extends ADTMatchers<T>
->(adt: T, matchers: Matchers): ResultsFromMatchers<Matchers> {
+>(adt: T, matchers: Matchers): ReturnTypes<Matchers> {
   // @ts-expect-error: 'string' can't be used to index type 'ADTMatchers<T>'.
   return matchers[adt.tag](adt);
 }
@@ -90,7 +89,7 @@ function matchADT<
 function matchADTSome<
   T extends Record<string, unknown> & { tag: string },
   Matchers extends Partial<ADTMatchers<T>>
->(adt: T, matchers: Matchers): ResultsFromMatchers<Matchers> {
+>(adt: T, matchers: Matchers): ReturnTypes<Matchers> {
   // @ts-expect-error: 'string' can't be used to index type 'ADTMatchers<T>'.
   return matchers[adt.tag]?.(adt);
 }

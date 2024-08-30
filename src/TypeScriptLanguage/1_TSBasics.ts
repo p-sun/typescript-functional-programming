@@ -88,3 +88,5 @@ function forLoop() {
     // const element = array[i];
   }
 }
+
+export default function run() {}
