@@ -85,3 +85,22 @@ zeroLeqTwo_ = LEQZ (S(S(Z)))
 
 twoLeqFour_ : LEQ (S(S(Z))) (S(S(S(S(Z)))))
 twoLeqFour_ = LEQS (LEQS (LEQZ (S(S(Z)))))
+
+--------------------------
+-- Equal
+--------------------------
+data Equal : a -> b -> Type where
+  Refl : Equal x x
+
+-- Equal is useful for creating proofs
+onePlusOneEqualsTwo_ : Equal (plus (S Z) (S Z)) (S (S Z))
+onePlusOneEqualsTwo_ = Refl
+
+-- Can't instantiate with non-equal types
+oneNotEqualThree_ : Equal (S Z) (S (S (S Z)))
+-- oneNotEqualThree_ = Refl
+-- While processing right hand side of oneNotEqualThree_. When unifying:
+--     Equal (S (S (S Z))) (S (S (S Z)))
+-- and:
+--     Equal (S Z) (S (S (S Z)))
+-- Mismatch between: S (S Z) and Z.
