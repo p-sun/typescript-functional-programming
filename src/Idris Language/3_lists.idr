@@ -26,41 +26,10 @@ l2 = Cons 2 l1
 -- Cons 2 (Cons 1 [])
 
 --------------------------
--- NonEmptyList
---------------------------
--- NonEmptyList must have at least 1 element.
--- NonEmptyList is a dependent type where the type itself is indexed by a List A.
-data NonEmptyList : {A : Type} -> List A -> Type where
-  NonEmptyListCons : {A : Type} -> (h: A) -> (t: List A) -> NonEmptyList (Cons h t)
-
-nonEmptyList1 = NonEmptyListCons 1 Nil
-nonEmptyList2 = NonEmptyListCons 2 (Cons 1 Nil)
-
------- Get Head from List, two different ways ------
-data Maybe a = Nothing | Just a
-
-listMaybeHead : {A: Type} -> (List A) -> Maybe A
-listMaybeHead Nil = Nothing
-listMaybeHead (Cons h t) = Just h
-
----
-listNonEmptyHead : {A : Type} -> (l : List A) -> NonEmptyList l
-listNonEmptyHead (Cons h t) = NonEmptyListCons h t
-listNonEmptyHead Nil = ?hole
-
-l6 = listNonEmptyHead l2 -- Type: NonEmptyListCons 2 (Cons 1 [])
--- l7 = nonEmptyListHead Nil -- Cannot instantiate. "Unsolved holes" error.
-
------- Given a List, return a NonEmptyList if possible
-maybeNonEmptyList : {A : Type} -> (l : List A) -> Maybe (NonEmptyList l)
-maybeNonEmptyList Nil = Nothing
-maybeNonEmptyList (Cons h t) = Just (NonEmptyListCons h t)
-
---------------------------
 -- Map & Filter List
 --------------------------
 
-listMap: {A, B: Type} -> (A -> B) -> List A -> List B
+listMap : {A, B: Type} -> (A -> B) -> List A -> List B
 listMap f Nil = Nil
 listMap f (Cons h t) = Cons (f h) (listMap f t)
 
@@ -83,7 +52,7 @@ data Nat : Type where
   Z : Nat
   S : Nat -> Nat
   
-plus: Nat -> Nat -> Nat
+plus : Nat -> Nat -> Nat
 plus Z n = n
 plus (S m) n = S (plus m n)
 
@@ -110,3 +79,54 @@ vec3_ = VCons (S(S(S Z))) VNil -- [3]
 vec21_ = VCons (S(S(Z))) (VCons (S Z) VNil) -- [2, 1]
 vec321_: Vec (S(S(S Z))) Nat
 vec321_ = vecConcat vec3_ vec21_ -- [3, 2, 1]
+
+--------------------------
+-- NonEmptyList
+--------------------------
+-- NonEmptyList must have at least 1 element.
+-- NonEmptyList is a dependent type where the type itself is indexed by a List A.
+data NonEmptyList : {A : Type} -> List A -> Type where
+  NonEmptyListCons : {A : Type} -> (h: A) -> (t: List A) -> NonEmptyList (Cons h t)
+
+nonEmptyList1 = NonEmptyListCons 1 Nil
+nonEmptyList2 = NonEmptyListCons 2 (Cons 1 Nil)
+nonEmptyList3 = NonEmptyListCons 3 (Cons 2 (Cons 1 Nil))
+
+--------------------------
+-- NonEmptyList From List
+--------------------------
+data Maybe a = Nothing | Just a
+
+------ Given a List, return a NonEmptyList if possible
+listNonEmptyHead : {A : Type} -> (l : List A) -> NonEmptyList l
+listNonEmptyHead Nil = ?hole
+listNonEmptyHead (Cons h t) = NonEmptyListCons h t
+
+l6 = listNonEmptyHead l2 -- Type: NonEmptyListCons 2 (Cons 1 [])
+-- l7 = nonEmptyListHead Nil -- Cannot instantiate. "Unsolved holes" error.
+
+------ Given a List, return a Maybe NonEmptyList
+maybeNonEmptyList : {A : Type} -> (l : List A) -> Maybe (NonEmptyList l)
+maybeNonEmptyList Nil = Nothing
+maybeNonEmptyList (Cons h t) = Just (NonEmptyListCons h t)
+
+--------------------------
+-- Head From List
+--------------------------
+------ Get Maybe Head from List ------
+listMaybeHead : {A: Type} -> (List A) -> Maybe A
+listMaybeHead Nil = Nothing
+listMaybeHead (Cons h t) = Just h
+
+------ Get Head from List, by passing in proof that List is non-empty ------
+listHead : {A: Type} -> (l: List A) -> (NonEmptyList l) -> A
+listHead (Cons head _) _ = head
+
+list789_ : List Int
+list789_ = Cons 7 (Cons 8 (Cons 9 Nil))
+
+list789_nonEmptyProof_ : NonEmptyList Main.list789_
+list789_nonEmptyProof_ = NonEmptyListCons 7 (Cons 8 (Cons 9 Nil))
+
+myHead_ : Int
+myHead_ = listHead list789_ list789_nonEmptyProof_ -- value of 7
