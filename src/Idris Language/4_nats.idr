@@ -14,7 +14,7 @@ four_ = S (S (S (S Z))) -- plus (S (S Z)) (S (S Z))  -- S (S (S (S Z)))
 six_ = S (S (S (S (S (S Z))))) -- plus (S (S Z)) (S (S Z))  -- S (S (S (S Z)))
 
 ------ Is Even ------
--- IsEven as a type means it can only be instantiated with even Nats.
+-- IsEven can only be instantiated with even Nats.
 data IsEven : Nat -> Type where
   EvenZ : IsEven Z
   EvenS : {n: Nat} -> IsEven n -> IsEven (S (S n))
@@ -57,3 +57,31 @@ data IsOdd : Nat -> Type where
 
 fiveIsOdd_: IsOdd (S (S (S (S (S Z)))))
 fiveIsOdd_ = OddSS (OddSS Odd1)
+
+--------------------------
+-- Predicates as Types
+--------------------------
+data Bool : Type where
+  True : Bool
+  False : Bool
+
+------ Less than or equal, as a function ------
+isLeq : Nat -> Nat -> Bool
+isLeq Z _ = True
+isLeq (S m) Z = False
+isLeq (S m) (S n) = isLeq m n
+
+oneIsLeqThree_ = isLeq (S Z) (S (S (Z))) -- True
+twoIsLeqTwo_ = isLeq (S (S (Z))) (S (S (Z))) -- True
+
+------ Less than or equal, as a data type ------
+data LEQ : Nat -> Nat -> Type where
+  LEQZ : (n: Nat) -> LEQ Z n
+  LEQS : {m, n: Nat} -> LEQ m n -> LEQ (S m) (S n)
+
+-- `LEQ m n` can only be instantiated when m <= n
+zeroLeqTwo_ : LEQ Z (S(S(Z)))
+zeroLeqTwo_ = LEQZ (S(S(Z)))
+
+twoLeqFour_ : LEQ (S(S(Z))) (S(S(S(S(Z)))))
+twoLeqFour_ = LEQS (LEQS (LEQZ (S(S(Z)))))
