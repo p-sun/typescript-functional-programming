@@ -70,3 +70,22 @@ function infiniteLoop(): never {
 }
 -}
 data Void : Type where -- also called False
+
+--------------------------
+-- Inferring Types
+--------------------------
+-- If you use {}, Idris can try to infer type A
+data List : Type -> Type where
+  Nil : {A: Type} -> List A
+  Cons : {A: Type} -> A -> List A -> List A
+
+l0 : List Int
+l0 = Nil
+
+-- If you use (), pass type A explicitly into the type constructor
+data List_ : Type -> Type where
+  Nil_ : (A: Type) -> List_ A
+  Cons_: (A: Type) -> A -> List_ A -> List_ A
+
+l0_ : List_ Int
+l0_ = Nil_ Int

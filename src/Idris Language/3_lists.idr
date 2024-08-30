@@ -6,21 +6,12 @@ CMD+`,`. Search for `Idris` and then add `--no-prelude` to `Idris: Process Args`
 --------------------------
 -- Lists
 --------------------------
--- If you use {}, you can make Idris infer the type A
 data List : Type -> Type where
   Nil : {A: Type} -> List A
   Cons : {A: Type} -> A -> List A -> List A
 
 l0 : List Int
 l0 = Nil
-
--- If you use (), you have to pass the A type explicitly
-data List_ : Type -> Type where
-  Nil_ : (A: Type) -> List_ A
-  Cons_: (A: Type) -> A -> List_ A -> List_ A
-
-l0_ : List_ Int
-l0_ = Nil_ Int
 
 ------ Instanciating List ------ 
 
@@ -84,3 +75,38 @@ listFilter p Nil = Nil
 listFilter p (Cons h t) = case p h of
   True => Cons h (listFilter p t)
   False => listFilter p t
+
+--------------------------
+-- List with size
+--------------------------
+data Nat : Type where
+  Z : Nat
+  S : Nat -> Nat
+  
+plus: Nat -> Nat -> Nat
+plus Z n = n
+plus (S m) n = S (plus m n)
+
+-- To compare with Vec implementaion:
+-- data List : Type -> Type where
+--   Nil : {A: Type} -> List A
+--   Cons : {A: Type} -> A -> List A -> List A
+
+-- A homogenesous tuples of fixed length,
+-- that tracks the number of elements it contains.
+-- e.g. "Vec 3 String" == [String, String, String]
+-- How many instances does "Vec 0 T" have? 1   = T^0
+-- How many instances does "Vec 1 T" have? T   = T^1
+-- How many instances does "Vec 2 T" have? T*T = T^2
+data Vec : Nat -> Type -> Type where
+  VNil : {T: Type} -> Vec Z T
+  VCons : {T: Type} -> {n: Nat} -> (head: T) -> (tail: Vec n T) -> Vec (S n) T
+
+vecConcat : {T: Type} -> {m, n: Nat} -> Vec m T -> Vec n T -> Vec (plus m n) T
+vecConcat VNil ys = ys
+vecConcat (VCons h tail) ys = VCons h (vecConcat tail ys)
+
+vec3_ = VCons (S(S(S Z))) VNil -- [3]
+vec21_ = VCons (S(S(Z))) (VCons (S Z) VNil) -- [2, 1]
+vec321_: Vec (S(S(S Z))) Nat
+vec321_ = vecConcat vec3_ vec21_ -- [3, 2, 1]
