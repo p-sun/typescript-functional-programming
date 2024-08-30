@@ -84,6 +84,44 @@ const getCat = (name: CatName) => allCats[name];
 console.log(getCat('smoothie').age);
 
 /* -------------------------------------------------------------------------- */
+/*                   Embed value in under a key in a Record                   */
+/* -------------------------------------------------------------------------- */
+// 5.0.4+ only
+
+type UnitInfo = {
+  abbreviation: string,
+  conversionFromSI: number,
+  humanName: string,
+}
+
+function embedKey<
+  const Info extends Record<string, unknown>,
+>() {
+  return <const Key extends string, const R extends {[k: string]: Omit<Info, Key>}>(k: Key, r: R) => {
+    const result = {} as {[K in keyof R]: R[K] & {[k in Key]: K}} 
+
+    for (const item of Object.keys(r)) {
+      result[item as keyof R] = {...r[item], [k]: item } as any
+    }
+
+    return result
+  }
+}
+
+// Embed `{ humanName: "meter" }` inside the `meter` key.
+const DistanceUnits = embedKey<UnitInfo>()('humanName', {
+  meter: { abbreviation: 'm', conversionFromSI: 1 },
+  centimeter: { abbreviation: 'cm', conversionFromSI: 100 },
+  foot: { abbreviation: 'ft', conversionFromSI: 5280/1609 },
+  inch: { abbreviation: 'in', conversionFromSI: 5280/1609 * 12 },
+})
+
+type DistanceUnit = keyof typeof DistanceUnits
+
+const aUnit : DistanceUnit = 'meter'
+const {humanName, conversionFromSI} = DistanceUnits[aUnit]
+
+/* -------------------------------------------------------------------------- */
 /*           Union type before conditional `extends` is distributed           */
 /* -------------------------------------------------------------------------- */
 
