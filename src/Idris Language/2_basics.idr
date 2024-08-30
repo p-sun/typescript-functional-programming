@@ -7,52 +7,52 @@ CMD+`,`. Search for `Idris` and then add `--no-prelude` to `Idris: Process Args`
 {-
 Idris comes with no types. There are ALL built in the standard library.
 
-Imagine you wanted to "create" the booleans.
+Imagine you wanted to "create" the Bools.
 
-assert Boolean : Type
-assert True : Boolean
-assert False : Boolean
+assert Bool : Type
+assert True : Bool
+assert False : Bool
 
-Total? Are there other Booleans?
+Total? Are there other Bools?
 Disjoint? True = False?
 
 So we want to say 5 statements:
-- Boolean:Type
-- True:Boolean
-- False:Boolean
+- Bool:Type
+- True:Bool
+- False:Bool
 - True != False,
-- If x:Boolean then x=True or X=False
+- If x:Bool then x=True or X=False
   (i.e. the boolElim function)
-  The statement about you can use a boolean if you know how to use True and False
+  The statement about you can use a Bool if you know how to use True and False
   is called an "elimination rule".
 
-When we say True:Boolean and False:Boolean we are saying there are two distinct
-  ways to *INTRODUCE* a boolean (we say there are 2 "introduction rules").
+When we say True:Bool and False:Bool we are saying there are two distinct
+  ways to *INTRODUCE* a Bool (we say there are 2 "introduction rules").
 -}
 
-data Boolean : Type where
-  True : Boolean
-  False : Boolean
+data Bool : Type where
+  True : Bool
+  False : Bool
 
--- Basically a switch statement on the Boolean.
+-- Basically a switch statement on the Bool.
 -- This function exists inside the type-checker
--- derived from the definition of Boolean above.
-boolElim: {A: Type} -> Boolean -> A -> A -> A
+-- derived from the definition of Bool above.
+boolElim: {A: Type} -> Bool -> A -> A -> A
 boolElim True t f = t
 boolElim False t f = f
 
-not: Boolean -> Boolean
+not: Bool -> Bool
 not True = False
 not False = True
 
-not_: Boolean -> Boolean
+not_: Bool -> Bool
 not_ b = boolElim b False True
 
-and: Boolean -> Boolean -> Boolean
+and: Bool -> Bool -> Bool
 and True True = True
 and _ _ = False
 
-and_: Boolean -> Boolean -> Boolean
+and_: Bool -> Bool -> Bool
 and_ b1 b2 = boolElim b1 b2 False
 
 ----- Unit vs Void in Idris --------
