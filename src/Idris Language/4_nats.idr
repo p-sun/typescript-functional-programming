@@ -89,8 +89,12 @@ twoLeqFour_ = LEQS (LEQS (LEQZ (S(S(Z)))))
 --------------------------
 -- Equal
 --------------------------
-data Equal : a -> b -> Type where
-  Refl : Equal x x
+-- Same thing:
+-- data Equal : a -> b -> Type where
+--   Refl : Equal x x
+
+data Equal : {A : Type} -> A -> A -> Type where
+  Refl : {A : Type} -> {a: A} -> Equal a a
 
 -- Equal is useful for creating proofs
 onePlusOneEqualsTwo_ : Equal (plus (S Z) (S Z)) (S (S Z))
@@ -99,8 +103,15 @@ onePlusOneEqualsTwo_ = Refl
 -- Can't instantiate with non-equal types
 oneNotEqualThree_ : Equal (S Z) (S (S (S Z)))
 -- oneNotEqualThree_ = Refl
--- While processing right hand side of oneNotEqualThree_. When unifying:
---     Equal (S (S (S Z))) (S (S (S Z)))
--- and:
---     Equal (S Z) (S (S (S Z)))
--- Mismatch between: S (S Z) and Z.
+
+--------------------------
+-- Math Axioms
+--------------------------
+  
+-- Congruence. You can apply a function on both sides of an equal sign.
+cong : {A, B : Type} -> (f : A -> B) -> {x, y : A} -> Equal x y -> Equal (f x) (f y)
+cong f Refl = Refl
+
+plusZeroRight : (n : Nat) -> Equal (plus n Z) n
+plusZeroRight Z = Refl
+plusZeroRight (S n) = cong S (plusZeroRight n)
