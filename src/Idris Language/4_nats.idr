@@ -2,10 +2,13 @@
 %hide Z
 %hide S
 %hide Bool
+%hide True
+%hide False
 %hide Builtin.Equal
 %hide Prelude.Equal
 %hide Prelude.plus
-%hide Refl
+%hide Builtin.Refl
+%hide Prelude.cong
 
 data Nat : Type where
   Z : Nat
@@ -66,65 +69,3 @@ data IsOdd : Nat -> Type where
 
 fiveIsOdd_: IsOdd (S (S (S (S (S Z)))))
 fiveIsOdd_ = OddSS (OddSS Odd1)
-
---------------------------
--- Predicates as Types
---------------------------
-data Bool : Type where
-  True : Bool
-  False : Bool
-
------- Less than or equal, as a function ------
-isLeq : Nat -> Nat -> Bool
-isLeq Z _ = True
-isLeq (S m) Z = False
-isLeq (S m) (S n) = isLeq m n
-
-oneIsLeqThree_ = isLeq (S Z) (S (S (Z))) -- True
-twoIsLeqTwo_ = isLeq (S (S (Z))) (S (S (Z))) -- True
-
------- Less than or equal, as a data type ------
-data LEQ : Nat -> Nat -> Type where
-  LEQZ : (n: Nat) -> LEQ Z n
-  LEQS : {m, n: Nat} -> LEQ m n -> LEQ (S m) (S n)
-
--- `LEQ m n` can only be instantiated when m <= n
-zeroLeqTwo_ : LEQ Z (S(S(Z)))
-zeroLeqTwo_ = LEQZ (S(S(Z)))
-
-twoLeqFour_ : LEQ (S(S(Z))) (S(S(S(S(Z)))))
-twoLeqFour_ = LEQS (LEQS (LEQZ (S(S(Z)))))
-
---------------------------
--- Equal
---------------------------
--- Same as the definition of Equal below
--- data Equal : a -> b -> Type where
---   Refl : Equal x x
-
-data (==) : {A : Type} -> A -> A -> Type where
-  Refl : {A : Type} -> {a: A} -> a == a
-
--- Equal is useful for creating proofs
-onePlusOneEqualsTwo_ : (plus (S Z) (S Z)) == (S (S Z))
-onePlusOneEqualsTwo_ = Refl
-
--- Can't instantiate with non-equal types
-oneNotEqualThree_ : (S Z) == (S (S (S Z)))
--- oneNotEqualThree_ = Refl
-
---------------------------
--- Math Axioms
---------------------------
-  
--- Congruence. We can apply a function on both sides of an equal sign.
-cong : {A, B : Type} -> (f : A -> B) -> {x, y : A} -> x == y -> (f x) == (f y)
-cong f Refl = Refl
-
-plusZeroRight : (n : Nat) -> (plus n Z) == n
-plusZeroRight Z = Refl
-plusZeroRight (S n) = cong S (plusZeroRight n)
-
-leqSqueeze : {m,n: Nat} -> LEQ m n -> LEQ n m -> m == n
-
-leqTrans : {m,n,o: Nat} -> LEQ m n -> LEQ n o -> LEQ m o

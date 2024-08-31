@@ -9,12 +9,12 @@ https://idris2.readthedocs.io/en/latest/tutorial/starting.html
 $ brew install idris2
 
 To execute in terminal:
-$ idris2 hello.idr -o hello
+$ idris2 1_hello.idr -o hello
 $ ./build/exec/hello
 Hello world
 
 To execute in the interactive environment:
-idris2 hello.idr
+idris2 1_hello.idr
 Main> :t main
 Main.main : IO ()
 Main> :c hello main

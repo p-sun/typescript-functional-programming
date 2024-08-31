@@ -39,12 +39,8 @@ listMap f Nil = Nil
 listMap f (Cons h t) = Cons (f h) (listMap f t)
 
 ---
-
-data Boolean : Type where
-  True : Boolean
-  False : Boolean
   
-listFilter: {A: Type} -> (A -> Boolean) -> List A -> List A
+listFilter: {A: Type} -> (A -> Bool) -> List A -> List A
 listFilter p Nil = Nil
 listFilter p (Cons h t) = case p h of
   True => Cons h (listFilter p t)
@@ -64,18 +60,18 @@ listFilter p (Cons h t) = case p h of
 -- How many instances does "Vec 0 T" have? 1   = T^0
 -- How many instances does "Vec 1 T" have? T   = T^1
 -- How many instances does "Vec 2 T" have? T*T = T^2
-data Vec : Nat -> Type -> Type where
+data Vec : Nat -> (T: Type) -> Type where
   VNil : {T: Type} -> Vec Z T
-  VCons : {T: Type} -> {n: Nat} -> (head: T) -> (tail: Vec n T) -> Vec (S n) T
+  (::) : {T: Type} -> {n: Nat} -> (head: T) -> (tail: Vec n T) -> Vec (S n) T
 
 vecConcat : {T: Type} -> {m, n: Nat} -> Vec m T -> Vec n T -> Vec (plus m n) T
 vecConcat VNil ys = ys
-vecConcat (VCons h tail) ys = VCons h (vecConcat tail ys)
+vecConcat (h::tail) ys = h::(vecConcat tail ys)
 
-vec3_ = VCons (S(S(S Z))) VNil -- [3]
-vec21_ = VCons (S(S(Z))) (VCons (S Z) VNil) -- [2, 1]
-vec321_: Vec (S(S(S Z))) Nat
-vec321_ = vecConcat vec3_ vec21_ -- [3, 2, 1]
+vecT_ = True::VNil -- [True]
+vecFT_ = False::(True::VNil) -- [False, True]
+vecTFT_: Vec 3 Bool
+vecTFT_ = vecConcat vecT_ vecFT_ -- [True, False, True]
 
 --------------------------
 -- NonEmptyList
