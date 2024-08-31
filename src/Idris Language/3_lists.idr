@@ -1,3 +1,8 @@
+%hide Prelude.List
+%hide Prelude.Maybe
+%hide Prelude.Just
+%hide Prelude.Nothing
+
 --%default total
 {-
 To ignore prelude types like List and Nat.
@@ -48,14 +53,6 @@ listFilter p (Cons h t) = case p h of
 --------------------------
 -- List with size
 --------------------------
-data Nat : Type where
-  Z : Nat
-  S : Nat -> Nat
-  
-plus : Nat -> Nat -> Nat
-plus Z n = n
-plus (S m) n = S (plus m n)
-
 -- To compare with Vec implementaion:
 -- data List : Type -> Type where
 --   Nil : {A: Type} -> List A

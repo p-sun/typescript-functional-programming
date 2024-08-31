@@ -1,4 +1,7 @@
 %default total
+%hide Prelude.Bool
+%hide Prelude.List
+
 {-
 To ignore prelude types like List and Nat.
 CMD+`,`. Search for `Idris` and then add `--no-prelude` to `Idris: Process Args`.

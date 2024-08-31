@@ -1,3 +1,12 @@
+%hide Nat
+%hide Z
+%hide S
+%hide Bool
+%hide Builtin.Equal
+%hide Prelude.Equal
+%hide Prelude.plus
+%hide Refl
+
 data Nat : Type where
   Z : Nat
   S : Nat -> Nat
@@ -89,29 +98,33 @@ twoLeqFour_ = LEQS (LEQS (LEQZ (S(S(Z)))))
 --------------------------
 -- Equal
 --------------------------
--- Same thing:
+-- Same as the definition of Equal below
 -- data Equal : a -> b -> Type where
 --   Refl : Equal x x
 
-data Equal : {A : Type} -> A -> A -> Type where
-  Refl : {A : Type} -> {a: A} -> Equal a a
+data (==) : {A : Type} -> A -> A -> Type where
+  Refl : {A : Type} -> {a: A} -> a == a
 
 -- Equal is useful for creating proofs
-onePlusOneEqualsTwo_ : Equal (plus (S Z) (S Z)) (S (S Z))
+onePlusOneEqualsTwo_ : (plus (S Z) (S Z)) == (S (S Z))
 onePlusOneEqualsTwo_ = Refl
 
 -- Can't instantiate with non-equal types
-oneNotEqualThree_ : Equal (S Z) (S (S (S Z)))
+oneNotEqualThree_ : (S Z) == (S (S (S Z)))
 -- oneNotEqualThree_ = Refl
 
 --------------------------
 -- Math Axioms
 --------------------------
   
--- Congruence. You can apply a function on both sides of an equal sign.
-cong : {A, B : Type} -> (f : A -> B) -> {x, y : A} -> Equal x y -> Equal (f x) (f y)
+-- Congruence. We can apply a function on both sides of an equal sign.
+cong : {A, B : Type} -> (f : A -> B) -> {x, y : A} -> x == y -> (f x) == (f y)
 cong f Refl = Refl
 
-plusZeroRight : (n : Nat) -> Equal (plus n Z) n
+plusZeroRight : (n : Nat) -> (plus n Z) == n
 plusZeroRight Z = Refl
 plusZeroRight (S n) = cong S (plusZeroRight n)
+
+leqSqueeze : {m,n: Nat} -> LEQ m n -> LEQ n m -> m == n
+
+leqTrans : {m,n,o: Nat} -> LEQ m n -> LEQ n o -> LEQ m o
