@@ -1,7 +1,13 @@
 %default total
 %hide Prelude.Bool
 %hide Prelude.List
-
+%hide Prelude.Nil
+%hide Builtin.Pair 
+%hide Builtin.Void 
+%hide Builtin.MkPair 
+%hide Prelude.Either
+%hide Prelude.Left
+%hide Prelude.Right
 {-
 To ignore prelude types like List and Nat.
 CMD+`,`. Search for `Idris` and then add `--no-prelude` to `Idris: Process Args`.
@@ -77,18 +83,48 @@ data Void : Type where -- also called False
 --------------------------
 -- Inferring Types
 --------------------------
--- If you use {}, Idris can try to infer type A
-data List : Type -> Type where
-  Nil : {A: Type} -> List A
-  Cons : {A: Type} -> A -> List A -> List A
+-- Round braces () means a type needs to passed into the type constructor.
+data P : Type -> Type -> Type where
+  MkP : (A: Type) -> (B: Type) -> P A B
 
-l0 : List Int
-l0 = Nil
+l0_ = MkP Int Bool -- P Int Bool
 
--- If you use (), pass type A explicitly into the type constructor
-data List_ : Type -> Type where
-  Nil_ : (A: Type) -> List_ A
-  Cons_: (A: Type) -> A -> List_ A -> List_ A
+-- Curly braces {} are "named arguments".
+l1_ = MkP {A=Int} -- (B : Type) -> P Int B
 
-l0_ : List_ Int
-l0_ = Nil_ Int
+l2_ : P Int Bool
+l2_ = MkP {A=_} {B=_}
+
+-- When we omit the curly braces, we make the types implicit/inferred.
+data Q : Type -> Type -> Type where
+  MkQ : {A: Type} -> {B: Type} -> Q A B
+
+l3_ : Q Int Bool
+l3_ = MkQ -- Note A & B are inferred here
+
+l4_ = MkQ {B=Bool} {A=Int} -- Q Int Bool, same type as above
+
+--------------------------
+-- Pair
+--------------------------
+data Pair : Type -> Type -> Type where
+  MkPair : {A, B: Type} -> (a: A) -> (b: B) -> Pair A B
+
+pair_ : Pair Nat Bool
+pair_ = MkPair 3 True
+
+--------------------------
+-- Either
+--------------------------
+data Either : Type -> Type -> Type where
+  Left : {A, B : Type} -> (l: A) -> Either A B
+  Right : {A, B : Type} ->(r: B) -> Either A B
+
+either_string_ : Either String Nat
+either_string_ = Left "Hello World"
+
+either_nat_ : Either String Nat
+either_nat_ = Right 42
+
+either_bool_ : Either String Nat
+-- either_bool_ = Right True   -- Cannot instantiate
