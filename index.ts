@@ -37,7 +37,7 @@ const Run = {
     },
   },
   FPBasics: {
-    Currying: require('./src/FunctionalProgramming/1B_Currying'),
+    // Currying: require('./src/FunctionalProgramming/1B_Currying'),
     runOptionalMonad: runOptionalMonad,
     runStateMonad: runStateMonad,
     runStackMonad: runStackMonad,
@@ -57,6 +57,7 @@ const Run = {
 // Run.FPBasics.runStackMonad();
 // Run.FPDataStructures.runStream();
 Run.JSLanguage.runGenericADTMatcher();
+// Run.JSLanguage.runThisCallApplyBind();
 
 const rootElement = document.getElementById('root');
 if (rootElement) {

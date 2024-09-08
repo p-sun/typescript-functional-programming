@@ -64,15 +64,30 @@ console.assert(`${this}`, '<<Outer>>');
 // Non-arrow functions have their own `this` value, from the __function context__.
 // i.e. Where the function is defined.
 const nonArrowFn = function (this: any, s: string) {
+  if (this) {
+    this.toString = function toString() {
+      return '<<nonArrowFn>>';
+    };
+  }
+
   console.log(`Caller: ${s} -> nonArrowFn | this: ${this}`);
 };
 nonArrowFn('Outer'); // this: undefined
+new (nonArrowFn as any)('new Outer'); // this: <<nonArrowFn>>
 
 // Arrow functions maintain the value of `this` from the __caller context__.
 const arrowFn = (s: string) => {
+  if (this) {
+    // @ts-expect-error
+    this.toString = function toString() {
+      //^^^ Object is possibly 'undefined'
+      return '<<arrowFn>>';
+    };
+  }
+
   console.log(`Caller: ${s} -> arrowFn | this: ${this}`);
 };
-arrowFn('Outer'); // this: <<<Outer>>>
+arrowFn('@@@@Outer'); // this: <<<Outer>>>
 
 /* -------------------------------------------------------------------------- */
 /*                          Function.prototype.bind()                         */
