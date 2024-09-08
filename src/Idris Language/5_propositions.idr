@@ -3,9 +3,9 @@
 --------------------------
 -- We know this terminiates because of "structural recursion". 
 -- We see that the first term keeps getting smaller.
-times: Nat -> Nat -> Nat
-times Z n = Z
-times (S m) n = plus (times m n) n
+times : Nat -> Nat -> Nat
+times Z _ = Z
+times (S m) n = plus n (times m n)
 
 --------------------------
 -- Even Propositions - Two Methods

@@ -1,5 +1,8 @@
-%hide Prelude.plus
 %hide Builtin.Refl
+%hide Prelude.plus
+%hide Prelude.cong
+%hide Prelude.Num
+%hide Builtin.MkPair 
 
 plus: Nat -> Nat -> Nat
 plus Z n = n
@@ -34,16 +37,16 @@ symm: {A : Type} -> {x, y : A} -> x == y -> y == x
 symm Refl = Refl
 
 trans: {A : Type} -> {x, y, z : A} -> x == y -> y == z -> x == z
-trans Refl x_eq_z = x_eq_z
--- trans {x=x, y=x, z=y} (Refl {a=x}) x_eq_z = x_eq_z
+trans Refl Refl = Refl
 -- Other implementations that also work:
+-- trans Refl x_eq_z = x_eq_z
+-- trans {x=x, y=x, z=y} (Refl {a=x}) x_eq_z = x_eq_z
 -- trans Refl = id
--- trans Refl Refl = Refl
 
 -- Congruence follows above 3 laws, so it's an equivalence relation.
 -- Congruence - We can apply a function on both sides of an equal sign.
 cong : {T, U : Type} -> {x, y : T} -> (f: T -> U) -> x == y -> (f x) == (f y)
--- cong f Refl = Refl
+cong f Refl = Refl
 -- cong f {x, y=x} (Refl {a=x}) = Refl {A=U, a=(f x)}
 -- ^ Note that the implicit types for both Refl are different.
 
@@ -73,24 +76,10 @@ twoLeqFour_ : LEQ (S(S(Z))) (S(S(S(S(Z)))))
 twoLeqFour_ = LEQS (LEQS (LEQZ (S(S(Z)))))
 
 ------ Other relations involving '<=' ------
+-- m<=n, n<=m therefore m==n
 leqSqueeze : {m,n: Nat} -> LEQ m n -> LEQ n m -> m == n
 leqSqueeze (LEQZ Z) _ = Refl
 leqSqueeze (LEQZ (S _)) _ impossible
 leqSqueeze (LEQS lmn) (LEQS lnm) = cong S (leqSqueeze lmn lnm)
 
 leqTrans : {m,n,o: Nat} -> LEQ m n -> LEQ n o -> LEQ m o
-
---------------------------
--- Plus Relations
---------------------------
-plusZeroRight : (n : Nat) -> (plus n Z) == n
-plusZeroRight Z = Refl -- (plus Z Z) == Z
-plusZeroRight (S n) = cong S (plusZeroRight n)
--- plusZeroRight (S n) = cong {A=Nat, B=Nat, x=(plus n Z), y=n} S (plusZeroRight n)
-
--- How did we know how to implement the 2nd line?
--- plusZeroRight n              Input type of the type signature
--- -> (plus (S n) Z) == (S n)   Output type of the type signature
--- =  (S (plus n Z)) == (S n)
--- = cong S ((plus n Z) == n)
--- = cong S (plusZeroRight n)   Recursively call itself
