@@ -1,3 +1,33 @@
+{-
+TERM: Whenever you can implement a function of the form: (a,b) -> a = b (like above)
+we say that a and b are "propositionally equal".
+
+TERM: Whenever the Idris typechecker can determine if two things are equal,
+we call them "judgementally equal".
+
+pluz Z x = x        true judgementally
+plus x Z = x        true propositionally
+
+abc : Foo -> Bar
+def : Foo
+ghi = abc def       true judgementally 
+
+Note, we can try specific xs, and it'll always be equal judgementally!
+  plus Z Z = Z                    true, judgementally
+  plus (S Z) Z = (S Z)            true, judgementally
+  (plus (S Z) Z) = (S (S Z))      true, judgementally
+
+While we can't just say "plus x Z = x" we can say,
+"for all x, plus x Z = x". We prove this below by implementing plusZeroRight/plusNatZ.
+-}
+
+-- This structure is isomorphic to (Either Bool Nat).
+-- So Idris compiler will implement these two similarily.
+data Foo : Type where 
+  Pickles : Foo
+  Apples : Foo
+  Bananas: (n: Nat) -> Foo
+
 --------------------------
 -- Proving Plus Zero Right - `plus n Z = n`.
 --------------------------

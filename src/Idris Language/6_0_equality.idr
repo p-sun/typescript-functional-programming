@@ -27,9 +27,15 @@ oneNotEqualThree_ : (S Z) == (S (S (S Z)))
 -- oneNotEqualThree_ = Refl
 
 --------------------------
--- Equivalence Relations
--- An equivalence relation is reflexive, symmetric, and transitive.
+-- Equality
 --------------------------
+{-
+Axioms of Equality:
+  Reflexivity: for all x, x = x
+  Symmetry: for all x, y, if x = y, then y = x
+  Transitivity: for all x,y,z if x = y and y = z then x = z
+  Congruence: for all x,y,f, if x = y then f(x) = f(y)
+ -}
 refl: {A : Type} -> {x : A} -> x == x
 refl = Refl
 

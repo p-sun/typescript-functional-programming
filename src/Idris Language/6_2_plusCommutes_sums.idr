@@ -41,11 +41,11 @@ plusAssoc (S a) b c = cong S (plusAssoc a b c)
     -- cong S ?H   -- H: plus a (plus b c) = plus (plus a b) c
 
 plusQuadAssoc : (a,b,c,d: Nat) -> (a + b) + (c + d) = (a + c) + (b + d)
-plusQuadAssoc a b c d =                        --   (a + b) + (c + d)
+plusQuadAssoc a b c d =                  --   (a + b) + (c + d)
 rewrite sym (plusAssoc a b (c+d)) in     -- = a + (b + (c + d))
-    rewrite plusAssoc b c d in             -- = a + ((b + c) + d)
+    rewrite plusAssoc b c d in           -- = a + ((b + c) + d)
     rewrite (plusCommutes b c) in        -- = a + ((c + b) + d)
-        rewrite sym (plusAssoc c b d) in   -- = a + (c + (b + d))
+        rewrite sym (plusAssoc c b d) in -- = a + (c + (b + d))
         rewrite (plusAssoc a c (b+d)) in -- = (a + c) + (b + d)
             Refl
 
