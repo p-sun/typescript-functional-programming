@@ -1,5 +1,6 @@
 %default total
 %hide Prelude.Ordering
+%hide Prelude.compareNat
 %hide Prelude.minus
 {-
 Make an inductive data type `NInt` that is isomorphic to the integers. Implement its add function.
@@ -15,18 +16,20 @@ Make an inductive data type `NInt` that is isomorphic to the integers. Implement
 --------------------------
 -- Ordering
 --------------------------
+
+-- https://www.idris-lang.org/docs/idris2/0.5.1/contrib_docs/docs/Data.Int.Order.html#Data.Int.Order.GT
 data Ordering : Type where
-  LE : Ordering
+  LT : Ordering
   EQ : Ordering
-  GE : Ordering
+  GT : Ordering
 
 compareNat : Nat -> Nat -> Ordering
 compareNat 0 0 = EQ
 compareNat (S m) (S n) = compareNat m n
-compareNat (S _) 0 = GE
-compareNat 0 (S _) = LE
+compareNat (S _) 0 = GT
+compareNat 0 (S _) = LT
 
-testC1_: compareNat 2 1 = GE
+testC1_: compareNat 2 1 = GT
 testC1_ = Refl
 --------------------------
 -- minus -- same behavior as Prelude.minus
@@ -58,12 +61,12 @@ plusNInt (P a) (P b) = P (a + b + 1)
 plusNInt (N a) (N b) = N (a + b + 1)
 plusNInt (P a) (N b) = case compareNat a b of
   EQ => Zero
-  GE => P (minus a (b+1))
-  LE => N (minus b (a+1))
+  GT => P (minus a (b+1))
+  LT => N (minus b (a+1))
 plusNInt (N a) (P b) =  case compareNat a b of
   EQ => Zero
-  GE => N (minus a (b+1))
-  LE => P (minus b (a+1))
+  GT => N (minus a (b+1))
+  LT => P (minus b (a+1))
 
 --------------------------
 -- Tests
