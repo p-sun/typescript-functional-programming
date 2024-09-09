@@ -104,6 +104,14 @@ l3_ = MkQ -- Note A & B are inferred here
 
 l4_ = MkQ {B=Bool} {A=Int} -- Q Int Bool, same type as above
 
+-- Functions can take types as parameters too.
+DoubleP : (someA: Type) -> P someA someA
+DoubleP a = MkP a a
+
+l7_ = DoubleP Nat -- P Nat Nat
+
+l8_ = DoubleP {someA=Nat} -- P Nat Nat
+
 --------------------------
 -- Pair
 --------------------------
