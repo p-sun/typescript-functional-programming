@@ -4,12 +4,17 @@
 --------------------------
 -- Functor
 --------------------------
+{-
+A functor FA has a map function adheres to two laws:
+Law 1: map id FA = FA
+Law 2: map g (map f FA) = map (x => g(f(x))) FA
+-} 
 record Functor (F: Type -> Type) where
   constructor MkFunctor
-  map: {A, B: Type} -> (A -> B) -> F A -> F B
-  indentity: {A: Type} -> {x: F A} -> map (\a => a) x = x
-  composition: {A, B, C: Type} -> {f: A -> B} -> {g: B -> C} -> {x: F A}
-    -> map (g . f) x = map g (map f x)
+  fmap: {A, B: Type} -> (A -> B) -> F A -> F B
+  identityProof: {A: Type} -> {x: F A} -> fmap (\a => a) x = x
+  compositionProof: {A, B, C: Type} -> {f: A -> B} -> {g: B -> C} -> {x: F A}
+    -> fmap (g . f) x = fmap g (fmap f x)
 
 --------------------------
 -- Instanciate a `Functor List`
@@ -18,28 +23,25 @@ data List : Type -> Type where
   Nil: {A: Type} -> List A
   Cons: {A: Type} -> A -> List A -> List A
 
-listMap: {A, B: Type} -> (A -> B) -> List A -> List B
-listMap f Nil = Nil
-listMap f (Cons x xs) = Cons (f x) (listMap f xs)
+listmap: {A, B: Type} -> (A -> B) -> List A -> List B
+listmap f Nil = Nil
+listmap f (Cons x xs) = Cons (f x) (listmap f xs)
 
-{-
-A functor FA has a map function adheres to two laws:
-Law 1: map id FA = FA
-Law 2: map g (map f FA) = map (x => g(f(x))) FA
--} 
+-- Functor Law 1: map id FA = FA
+listMapIdentityProof: {A: Type} -> {x: List A} -> listmap (\a => a) x = x
+listMapIdentityProof {x=Nil} = Refl
+listMapIdentityProof {x=(Cons h t)} = cong (Cons h) (listMapIdentityProof {x=t})
 
-listFunctorIdentityProof: {A: Type} -> {x: List A} -> listMap (\a => a) x = x
-listFunctorIdentityProof {x=Nil} = Refl
-listFunctorIdentityProof {x=(Cons h t)} = cong (Cons h) (listFunctorIdentityProof {x=t})
-
-listFunctorCompositionProof: {A, B, C: Type} -> {f: A -> B} -> {g: B -> C} -> {x: List A}
-    -> listMap (g . f) x = listMap g (listMap f x)
-listFunctorCompositionProof = case x of 
-    Nil => Refl
-    Cons x xs => ?TODO2
+-- Functor Law 2: map g (map f FA) = map (x => g(f(x))) FA
+listMapCompositionProof: {A, B, C: Type} -> {f: A -> B} -> {g: B -> C} -> {x: List A}
+    -> listmap (g . f) x = listmap g (listmap f x)
+        -- listmap (\x => g (f x)) x = listmap g (listmap f x)
+listMapCompositionProof {x=Nil} = Refl
+listMapCompositionProof {x=Cons x xs} = cong (Cons (g (f x))) listMapCompositionProof
+    -- Cons (g (f x)) (listmap (\x => g (f x)) xs) = Cons (g (f x)) (listmap g (listmap f xs))
 
 listFunctor: Functor List
-listFunctor = MkFunctor listMap listFunctorIdentityProof listFunctorCompositionProof
+listFunctor = MkFunctor listmap listMapIdentityProof listMapCompositionProof
 
 {-
 Homework 0: convert the types from last time into record syntax (or explain why you can't)
