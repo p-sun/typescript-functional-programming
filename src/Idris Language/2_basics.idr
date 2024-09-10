@@ -112,6 +112,15 @@ l7_ = DoubleP Nat -- P Nat Nat
 
 l8_ = DoubleP {someA=Nat} -- P Nat Nat
 
+-- Pattern matching on () vs {}. "Plus is associative"
+plusAssoc : (a, b, c: Nat) -> plus a (plus b c) = plus (plus a b) c
+plusAssoc Z b c = Refl
+plusAssoc (S k) b c = cong S (plusAssoc k b c)
+
+plusAssoc_ : {a, b, c: Nat} -> plus a (plus b c) = plus (plus a b) c
+plusAssoc_ {a=Z} = Refl
+plusAssoc_ {a=(S k)} = cong S (plusAssoc_ {a=k})
+
 --------------------------
 -- Pair
 --------------------------

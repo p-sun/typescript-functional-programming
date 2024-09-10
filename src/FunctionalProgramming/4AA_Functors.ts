@@ -3,7 +3,7 @@
 /* -------------------------------------------------------------------------- */
 /**
  A functor FA has a map function adheres to two laws:
- Law 1: map id FA = map id FA
+ Law 1: map id FA = FA
  Law 2: map g (map f FA) = map (x => g(f(x))) FA
  */
 
