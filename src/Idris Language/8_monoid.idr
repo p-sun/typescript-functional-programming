@@ -1,5 +1,4 @@
-%hide Prelude.List
-%hide Prelude.Functor
+%hide Prelude.Monoid
 
 --------------------------
 -- Monoid
@@ -18,11 +17,12 @@ Examples:
 Intuitively a monoid is something we can "reduce from a starting place".
   If you can reduce a T[], then T is a monoid
 
-Clarity check: Is (List String) a functor?
-    NO! List is the functor.
-    'String' in 'List String' is called the "carrier set".
+In `List String`
+    - `List` is the functor.
+    - "Carrier Set" is the set of all possible lists of strings. i.e. {[], ["a", "hello"], ...}
 -}
 
+------ Monoid as data ------
 data Monoid_ : Type -> Type where
   MklMonoid_: {S: Type}
     -> (f: S -> S -> S)
@@ -32,6 +32,7 @@ data Monoid_ : Type -> Type where
     -> (neutralRight: {x: S} -> f x neutral = x)
     -> Monoid_ S
 
+------ Monoid as record 1 ------
 record Monoid_verbose (S: Type) where
   constructor MkMonoid_verbose
   (<+>): S -> S -> S
@@ -40,6 +41,8 @@ record Monoid_verbose (S: Type) where
   neutralLeft: {x: S} -> neutral <+> x = x
   neutralRight: {x: S} -> x <+> neutral = x
 
+------ Monoid as record 2 ------
+-- (with better separation of concerns)
 record AssocOperator {S: Type} (f: S -> S -> S) where
   constructor MkAssocOperator
   assoc: {a,b,c: S} -> f a (f b c) = f (f a b) c
@@ -49,6 +52,7 @@ record OperatorIdentity {S: Type} (f: S -> S -> S) (neutral: S) where
   neutralLeft: {x: S} -> f neutral x = x
   neutralRight: {x: S} -> f x neutral = x
 
+-- Note that assoc & neutralProof are proofs and contain no bits. So they get compiled out.
 record Monoid (S: Type) where
   constructor MkMonoid
   (<+>): S -> S -> S
@@ -56,34 +60,17 @@ record Monoid (S: Type) where
   assoc: AssocOperator (<+>)
   neutralProof: OperatorIdentity (<+>) neutral
 
---------------------------
--- Functor
---------------------------
-record Functor (F: Type -> Type) where
-  constructor MkFunctor
-  map: {A, B: Type} -> (A -> B) -> F A -> F B
-  indentity: {A: Type} -> {x: F A} -> map (\a => a) x = x
-  composition: {A, B, C: Type} -> {f: A -> B} -> {g: B -> C} -> {x: F A}
-    -> map (g . f) x = map g (map f x)
+-- Instanciate the Monoid above with (Nat, +, 0) ------
+plusAssoc : {a, b, c: Nat} -> plus a (plus b c) = plus (plus a b) c
+plusAssoc {a=Z} = Refl
+plusAssoc {a=(S k)} = cong S plusAssoc
 
-data List : Type -> Type where
-  Nil: {A: Type} -> List A
-  Cons: {A: Type} -> A -> List A -> List A
+plusZeroRight : {n : Nat} -> (plus n Z) = n
+plusZeroRight {n=Z} = Refl
+plusZeroRight {n=(S n)} = cong S plusZeroRight
 
-listMap: {A, B: Type} -> (A -> B) -> List A -> List B
-listMap f Nil = Nil
-listMap f (Cons x xs) = Cons (f x) (listMap f xs)
+zeroIsNeutralProof : OperatorIdentity Prelude.plus 0
+zeroIsNeutralProof = MkOperatorIdentity Refl plusZeroRight
 
-listFunctorIdentityProof: {A: Type} -> {x: List A} -> listMap (\a => a) x = x
-listFunctorIdentityProof {x=Nil} = Refl
-listFunctorIdentityProof {x=(Cons h t)} = cong (Cons h) (listFunctorIdentityProof {x=t})
-
-listFunctor: Functor List
-listFunctor = MkFunctor listMap listFunctorIdentityProof ?LIST_MAP_COMPOSITION
-
-{-
-Homework 0: convert the types from last time into record syntax (or explain why you can't)
-Homework 1: study the list functor stuff carefully
-Homework 2: finish the missing argument for listFunctor (fill hole ?LIST_MAP_COMPOSITION)
-Homework 3: implement the Maybe functor fully (type, map fn, instance of Functor record)
--}
+AdditiveMonoid: Monoid Nat
+AdditiveMonoid = MkMonoid (+) 0 (MkAssocOperator plusAssoc) zeroIsNeutralProof
