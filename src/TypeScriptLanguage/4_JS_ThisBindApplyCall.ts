@@ -55,7 +55,7 @@ this.toString = function toString() {
   return '<<Outer>>';
 };
 
-console.assert(`${this}`, '<<Outer>>');
+console.log(`${this}`, '<<Outer>>');
 
 /* -------------------------------------------------------------------------- */
 /*                         'this' and arrow functions                         */
