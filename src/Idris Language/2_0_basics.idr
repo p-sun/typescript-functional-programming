@@ -1,5 +1,6 @@
-%default total
 %hide Prelude.Bool
+%hide Prelude.True
+%hide Prelude.False
 %hide Prelude.List
 %hide Prelude.Nil
 %hide Builtin.Pair 
@@ -8,6 +9,8 @@
 %hide Prelude.Either
 %hide Prelude.Left
 %hide Prelude.Right
+%default total
+
 {-
 To ignore prelude types like List and Nat.
 CMD+`,`. Search for `Idris` and then add `--no-prelude` to `Idris: Process Args`.
