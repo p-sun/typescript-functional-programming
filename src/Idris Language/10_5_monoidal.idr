@@ -128,6 +128,9 @@ this is equal to fb.
 pure_ : {f: Type -> Type} -> Monoidal f => a -> f a
 pure_ a = fmap (const a) unit
 
+eval : (a -> b, a) -> b
+eval (f, x) = f x
+
 -- (<*>) : F (A -> B) -> F A -> F B
 apply_ : {f: Type -> Type} -> Monoidal f => f (a -> b) -> f a -> f b
 apply_ ff fa = fmap eval (ff *&* fa)

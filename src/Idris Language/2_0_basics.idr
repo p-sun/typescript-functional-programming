@@ -140,6 +140,9 @@ data Either : Type -> Type -> Type where
   Left : {A, B : Type} -> (l: A) -> Either A B
   Right : {A, B : Type} ->(r: B) -> Either A B
 
+-- same thing
+data Either_ = Left_ a | Right_ b
+
 either_string_ : Either String Nat
 either_string_ = Left "Hello World"
 

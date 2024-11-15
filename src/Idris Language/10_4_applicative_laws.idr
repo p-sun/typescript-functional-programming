@@ -1,3 +1,4 @@
+%default total
 {-
 --------------------------
 -- Applicative Laws
