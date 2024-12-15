@@ -1,17 +1,27 @@
 console.log(Array.from('0123')); // ['0', '1', '2', '3']
 
+// --------------------
 // Arrays
 
 const arr = ['00', '11', '22', '33'];
 
-// ES2015
-for (const [index, value] of arr.entries()) {
-  console.log('array1 | index:', index, 'value:', value);
-}
+function forLoops() {
+  for (let i = 0; i < arr.length; i++) {
+    console.log(`i: ${i} | value: ${arr[i]}`)
+  }
 
-arr.forEach((value, index) => {
-  console.log('array2 | index:', index, 'value:', value);
-});
+  for (const n of arr) {
+    console.log(`value: ${n}`)
+  }
+
+  for (const [i, n] of arr.entries()) { // ES2015
+    console.log(`i: ${i} | value: ${n}`);
+  }
+
+  arr.forEach((n, i) => {
+    console.log(`i: ${i} | value: ${n}`);
+  });
+}
 
 // --------------------
 // Destructuring
@@ -26,8 +36,8 @@ const [head, ...tail] = [1, 2, 3, 4];
 // --------------------
 // Keys
 class EmojiClass {
-  fox() {}
-  '🦊'() {}
+  fox() { }
+  '🦊'() { }
 }
 
 const emojiClass = new EmojiClass();
@@ -56,7 +66,7 @@ const h = new Hamburger();
 // (h as any).#hCheese; // Not Allowed
 
 class Animal {
-  constructor(public name: string) {}
+  constructor(public name: string) { }
 
   move(distanceInMeters: number = 0) {
     console.log(`${this.name} moved ${distanceInMeters}m.`);
@@ -77,16 +87,55 @@ class Bird extends Animal {
   }
 }
 
-const bird = new Bird('Bird', true);
-bird.fly();
-bird.move(10);
+const bird: Animal = new Bird('Bird', true);
+bird.move(10)
+if (bird instanceof Bird) {
+  bird.fly()
+}
 
-// throw new Error('This is an error');
+// Type Narrowing
+type TaggedAnimal =
+  { tag: "pigeon", fly: () => void, birdId?: number } |
+  { tag: "person", name: string }
 
-function forLoop() {
-  for (let i = 0; i < 5; i++) {
-    // const element = array[i];
+const handleAnimal = (animal: TaggedAnimal) => {
+  if (animal.tag === "pigeon") {
+    animal.fly()
+  }
+  if ("fly" in animal) {
+    animal.fly()
+    delete animal.birdId
   }
 }
 
-export default function run() {}
+// Class Declaration ------
+class Counter {
+  private _count: number = 0;
+
+  get count(): number {
+    return this._count;
+  }
+
+  set count(value: number) {
+    this._count = value;
+  }
+}
+
+class ConstructorExample {
+  constructor(public readonly readOnly: string, public readWrite: number, private privateOnly: boolean) { }
+
+  doStuff() {
+    this.readOnly
+    this.readWrite
+    this.privateOnly
+  }
+}
+const constructorExample = new ConstructorExample('read only', 42, true);
+constructorExample.readOnly
+constructorExample.readWrite = 43
+// constructorExample.privateOnly // Cannot access
+
+// Error Handling ------
+// throw new Error('This is an error');
+
+export default function run() { }
