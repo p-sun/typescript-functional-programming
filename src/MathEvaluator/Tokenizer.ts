@@ -10,7 +10,7 @@ import {
   repeatOnceOrMore_greedy,
   orFirst,
   number,
-} from '../ParserCombinator/ParserCombinator';
+} from '../ParserCombinator/ParserCombinator_v1';
 import { TermToken } from './Term';
 
 export default function mathTokenizer(contents: string): TermToken[] {
