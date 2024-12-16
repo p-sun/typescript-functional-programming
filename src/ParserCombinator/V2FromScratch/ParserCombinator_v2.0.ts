@@ -40,7 +40,7 @@ class Parser<A> {
     }
 
     // Primitives
-    static string<S extends string = string>(str: S): Parser<S> {
+    static string(str: string): Parser<string> {
         return new Parser((loc) => {
             if (loc.startsWith(str)) {
                 return ParserResult.success(str);
@@ -64,9 +64,7 @@ function isEqualForTests<A>(
     return result1.match({
         success: (value1) =>
             result2.match({
-                success: (value2) => {
-                    return JSON.stringify(value1) === JSON.stringify(value2)
-                },
+                success: (value2) => JSON.stringify(value1) === JSON.stringify(value2),
                 failure: () => false,
             }),
         failure: () =>
