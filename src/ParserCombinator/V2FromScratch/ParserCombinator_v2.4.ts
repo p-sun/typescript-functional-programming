@@ -35,18 +35,19 @@ class Parser<A> {
         )
     }
 
+    // and: Parser<A> -> Parser<B> -> Parser<Either<A, B>>
     or<B>(pb: Parser<B>): Parser<Either<A, B>> {
         return new Parser((loc) => {
-            return this.run(loc).mapSuccess((success1) => {
-                return new ParserSuccess(Either.left<A, B>(success1.value), success1.consumedCount)
-            }).bindError((failure1) => {
-                return pb.run(loc).mapSuccess<Either<A, B>>((success2) => {
-                    return new ParserSuccess(Either.right<A, B>(success2.value), success2.consumedCount)
-                }).mapFailure((failure2) => {
-                    const error = { message: 'Expected either parser to succeed', nextIndex: loc.nextIndex }
-                    return new ParserFailure([error, ...failure1.errors, ...failure2.errors])
+            return this.run(loc)
+                .mapValue(Either.left<A, B>)
+                .bindFailure((failure1) => {
+                    return pb.run(loc)
+                        .mapValue(Either.right<A, B>)
+                        .mapErrors((errors) => {
+                            const orError = { message: 'Expected either parser to succeed', nextIndex: loc.nextIndex }
+                            return [orError, ...failure1.errors, ...errors]
+                        })
                 })
-            })
         })
     }
 }
@@ -107,12 +108,15 @@ class ParserResult<A> {
         }
     }
 
-    // more like append error?
-    mapFailure(f: (a: ParserFailure) => ParserFailure): ParserResult<A> {
+    mapValue<B>(f: (a: A) => B): ParserResult<B> {
+        return this.mapSuccess((success) => new ParserSuccess(f(success.value), success.consumedCount))
+    }
+
+    mapErrors(f: (errors: ParserError[]) => ParserError[]): ParserResult<A> {
         if (this.data.isSuccessful) {
             return this
         } else {
-            return ParserResult.failure(f(this.data.failure).errors)
+            return ParserResult.failure(f(this.data.failure.errors))
         }
     }
 
@@ -126,7 +130,7 @@ class ParserResult<A> {
         }
     }
 
-    bindError(f: (a: ParserFailure) => ParserResult<A>): ParserResult<A> {
+    bindFailure(f: (a: ParserFailure) => ParserResult<A>): ParserResult<A> {
         if (this.data.isSuccessful) {
             return this
         } else {
@@ -169,10 +173,10 @@ type ParserError = { message: string, nextIndex: number }
 class Either<L, R> {
     constructor(
         private readonly data:
-          | { tag: 'left'; value: L }
-          | { tag: 'right'; value: R }
-      ) {}
-    
+            | { tag: 'left'; value: L }
+            | { tag: 'right'; value: R }
+    ) { }
+
     static left<L, R>(l: L): Either<L, R> {
         return new Either<L, R>({ tag: 'left', value: l });
     }
