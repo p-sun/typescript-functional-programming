@@ -9,11 +9,11 @@ class Location {
     ) { }
 
     advance<A>(ps: ParserSuccess<A>): Location {
-        return new Location(this.targetString, this.nextIndex + ps.consumedCount);
+        return new Location(this.targetString, this.nextIndex + ps.consumedCount)
     }
 
     nextString(): string {
-        return this.targetString.slice(this.nextIndex);
+        return this.targetString.slice(this.nextIndex)
     }
 }
 
@@ -28,19 +28,19 @@ class ParserResult<A> {
 
     // Pure
     static success<A>(value: A, consumedCount: number): ParserResult<A> {
-        return new ParserResult({ isSuccessful: true, success: new ParserSuccess(value, consumedCount) });
+        return new ParserResult({ isSuccessful: true, success: new ParserSuccess(value, consumedCount) })
     }
 
     static failure<A>(errors: ParserError[]): ParserResult<A> {
-        return new ParserResult({ isSuccessful: false, failure: new ParserFailure(errors) });
+        return new ParserResult({ isSuccessful: false, failure: new ParserFailure(errors) })
     }
 
     // All ADTs have a match method
-    match<T>(matchers: { success: (a: ParserSuccess<A>) => T; failure: (errors: ParserError[]) => T }): T {
+    match<T>(matchers: { success: (a: ParserSuccess<A>) => T, failure: (errors: ParserError[]) => T }): T {
         if (this.data.isSuccessful) {
-            return matchers.success(this.data.success);
+            return matchers.success(this.data.success)
         } else {
-            return matchers.failure(this.data.failure.errors);
+            return matchers.failure(this.data.failure.errors)
         }
     }
 
@@ -48,9 +48,9 @@ class ParserResult<A> {
     // map: (A -> B) -> F A -> F B
     mapSuccess<B>(f: (a: ParserSuccess<A>) => ParserSuccess<B>): ParserResult<B> {
         if (this.data.isSuccessful) {
-            return ParserResult.success(f(this.data.success).value, f(this.data.success).consumedCount);
+            return ParserResult.success(f(this.data.success).value, f(this.data.success).consumedCount)
         } else {
-            return ParserResult.failure(this.data.failure.errors);
+            return ParserResult.failure(this.data.failure.errors)
         }
     }
 
@@ -58,9 +58,9 @@ class ParserResult<A> {
     // bind: (A -> F B) -> F A -> F B
     bindSuccess<B>(f: (a: ParserSuccess<A>) => ParserResult<B>): ParserResult<B> {
         if (this.data.isSuccessful) {
-            return f(this.data.success);
+            return f(this.data.success)
         } else {
-            return ParserResult.failure(this.data.failure.errors);
+            return ParserResult.failure(this.data.failure.errors)
         }
     }
 }
@@ -102,7 +102,7 @@ class Parser<A> {
     ) { }
 
     runString(s: string): ParserResult<A> {
-        return this.run(new Location(s));
+        return this.run(new Location(s))
     }
 
     // Primitives
@@ -110,9 +110,9 @@ class Parser<A> {
         return new Parser((loc) => {
             const substring = loc.nextString()
             if (substring.startsWith(s)) {
-                return ParserResult.success(s, s.length);
+                return ParserResult.success(s, s.length)
             } else {
-                return ParserResult.failure([{ message: `Expected '${s}' but got '${substring}''`, nextIndex: loc.nextIndex }]);
+                return ParserResult.failure([{ message: `Expected '${s}' but got '${substring}''`, nextIndex: loc.nextIndex }])
             }
         })
     }
@@ -154,7 +154,7 @@ function isEqualForTests<A>(
                         failure1.every((error, i) => failure2[i]["nextIndex"] === error["nextIndex"])
                 },
             }),
-    });
+    })
 }
 
 function assertParserResultIsEqual<A>(testname: string, actual: ParserResult<A>, expected: ParserResult<A>) {
