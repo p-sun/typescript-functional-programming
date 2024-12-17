@@ -34,6 +34,21 @@ class Parser<A> {
             )
         )
     }
+
+    or<B>(pb: Parser<B>): Parser<Either<A, B>> {
+        return new Parser((loc) => {
+            return this.run(loc).mapSuccess((success1) => {
+                return new ParserSuccess(Either.left<A, B>(success1.value), success1.consumedCount)
+            }).bindError((failure1) => {
+                return pb.run(loc).mapSuccess<Either<A, B>>((success2) => {
+                    return new ParserSuccess(Either.right<A, B>(success2.value), success2.consumedCount)
+                }).mapFailure((failure2) => {
+                    const error = { message: 'Expected either parser to succeed', nextIndex: loc.nextIndex }
+                    return new ParserFailure([error, ...failure1.errors, ...failure2.errors])
+                })
+            })
+        })
+    }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -92,6 +107,15 @@ class ParserResult<A> {
         }
     }
 
+    // more like append error?
+    mapFailure(f: (a: ParserFailure) => ParserFailure): ParserResult<A> {
+        if (this.data.isSuccessful) {
+            return this
+        } else {
+            return ParserResult.failure(f(this.data.failure).errors)
+        }
+    }
+
     // Monad
     // bind: (A -> F B) -> F A -> F B
     bindSuccess<B>(f: (a: ParserSuccess<A>) => ParserResult<B>): ParserResult<B> {
@@ -99,6 +123,14 @@ class ParserResult<A> {
             return f(this.data.success)
         } else {
             return ParserResult.failure(this.data.failure.errors)
+        }
+    }
+
+    bindError(f: (a: ParserFailure) => ParserResult<A>): ParserResult<A> {
+        if (this.data.isSuccessful) {
+            return this
+        } else {
+            return f(this.data.failure)
         }
     }
 }
@@ -129,6 +161,26 @@ class ParserFailure {
 }
 
 type ParserError = { message: string, nextIndex: number }
+
+/* -------------------------------------------------------------------------- */
+/*                                   Either                                   */
+/* -------------------------------------------------------------------------- */
+
+class Either<L, R> {
+    constructor(
+        private readonly data:
+          | { tag: 'left'; value: L }
+          | { tag: 'right'; value: R }
+      ) {}
+    
+    static left<L, R>(l: L): Either<L, R> {
+        return new Either<L, R>({ tag: 'left', value: l });
+    }
+
+    static right<L, R>(r: R): Either<L, R> {
+        return new Either<L, R>({ tag: 'right', value: r });
+    }
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                  Test Utils                                */
@@ -202,4 +254,17 @@ export default function run() {
     assertFailure("Test Parser.and failure",
         parserABandCD.runString("abce"),
         [{ message: "", nextIndex: 2 }])
+
+    const parserHiOrHello = Parser.string("hi").or(Parser.string("hello"))
+    assertSuccess("Test Parser.or success right",
+        parserHiOrHello.runString("hello world"),
+        new ParserSuccess(Either.right("hello"), 5))
+
+    assertSuccess("Test Parser.or success left",
+        parserHiOrHello.runString("hi world"),
+        new ParserSuccess(Either.left("hi"), 2))
+
+    assertFailure("Test Parser.or failure",
+        parserHiOrHello.runString("morning world"),
+        [{ message: "", nextIndex: 0 }, { message: "", nextIndex: 0 }, { message: "", nextIndex: 0 }])
 }
