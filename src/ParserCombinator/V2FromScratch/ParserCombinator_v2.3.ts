@@ -171,22 +171,24 @@ function assertParserResultIsEqual<A>(testname: string, actual: ParserResult<A>,
 /*                                  Run Tests                                 */
 /* -------------------------------------------------------------------------b- */
 
-export function runParserTests() {
+export default function run() {
+    const parserAB = Parser.string("ab")
+
     assertParserResultIsEqual("Test Parser.string success",
-        Parser.string("ab").runString("abc"),
+        parserAB.runString("abc"),
         ParserResult.success("ab", 2))
 
     assertParserResultIsEqual("Test Parser.string fail",
-        Parser.string("ab").runString("ad"),
+        parserAB.runString("ad"),
         ParserResult.failure([{ message: "", nextIndex: 0 }]))
 
-    assertParserResultIsEqual("Test Parser.and success",
-        Parser.string("ab").and(Parser.string("cd")).runString("abcd"),
-        ParserResult.success(["ab", "cd"], 4))
+    const parserABandCD = Parser.string("ab").and(Parser.string("cd"))
 
+    assertParserResultIsEqual("Test Parser.and success",
+        parserABandCD.runString("abcd"),
+        ParserResult.success(["ab", "cd"], 4))
+    
     assertParserResultIsEqual("Test Parser.and failure",
-        Parser.string("ab").and(Parser.string("cd")).runString("abce"),
+        parserABandCD.runString("abce"),
         ParserResult.failure([{ message: "", nextIndex: 2 }]))
 }
-
-export default { runParserTests }

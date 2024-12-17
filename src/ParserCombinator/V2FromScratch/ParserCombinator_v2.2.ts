@@ -148,7 +148,7 @@ function assertParserResultIsEqual<A>(testname: string, actual: ParserResult<A>,
 /*                                  Run Tests                                 */
 /* -------------------------------------------------------------------------b- */
 
-export function runParserTests() {
+export default function run() {
     assertParserResultIsEqual("Test Parser.string success",
         Parser.string("ab").runString("abc"),
         ParserResult.success("ab", 2))
@@ -165,5 +165,3 @@ export function runParserTests() {
         Parser.string("ab").and(Parser.string("cd")).runString("abce"),
         ParserResult.failure([{ message: "", nextIndex: 2 }]))
 }
-
-export default { runParserTests }
