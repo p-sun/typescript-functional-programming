@@ -59,8 +59,8 @@ class ParserFailure {
         readonly errors: ParserError[],
     ){}
 
-    static create(error: ParserError): ParserFailure {
-        return new ParserFailure([error])
+    static create(message: string, nextIndex: number): ParserFailure {
+        return new ParserFailure([{ message, nextIndex }])
     }
 
     appendingError(error: ParserError): ParserFailure {
@@ -128,7 +128,7 @@ function isEqualForTests<A>(
                 success: () => false,
                 failure: (failure2) => {
                     return failure1.length === failure2.length &&
-                    failure1.every((error, i) => failure2[i]["nextIndex"] === error["nextIndex"])
+                        failure1.every((error, i) => failure2[i]["nextIndex"] === error["nextIndex"])
                 },
             }),
     });
@@ -155,7 +155,7 @@ export function runParserTests() {
 
     assertParserResultIsEqual("Test Parser.string fail",
         Parser.string("ab").runString("ad"),
-        ParserResult.failure([{message: "", nextIndex: 0}]))
+        ParserResult.failure([{ message: "", nextIndex: 0 }]))
 
     assertParserResultIsEqual("Test Parser.and success",
         Parser.string("ab").and(Parser.string("cd")).runString("abcd"),
@@ -163,7 +163,7 @@ export function runParserTests() {
 
     assertParserResultIsEqual("Test Parser.and failure",
         Parser.string("ab").and(Parser.string("cd")).runString("abce"),
-        ParserResult.failure([{message: "", nextIndex: 2}]))
+        ParserResult.failure([{ message: "", nextIndex: 2 }]))
 }
 
 export default { runParserTests }
