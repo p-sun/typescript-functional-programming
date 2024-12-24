@@ -1,4 +1,4 @@
--- Note: Comment out the %hide sections and this will still typecheck,
+-- Note: Comment out the sections with %hide and this will still typecheck,
 -- because this is how the interfaces are defined in Idris2.
 
 --------------------------
