@@ -8,23 +8,24 @@ Which ones can be implemented in terms of the others?
 Base set Functor: map
 
 Base set Applicative: pure, apply, map
-   - Make Monoidal
-        - unit with pure 
-        - prod with apply, map, (pair)
-   - Make Applicative map2, map3 with map, apply
+  - Make Monoidal
+    - unit with pure 
+    - prod with apply, map, (pair)
+  - Make Applicative map2, map3 with map, apply
 
 Base set Monoidal: unit, prod, map
-   - Make Applicative
-      - apply with map, prod, (evalPair)
-      - pure with map, unit
+  - Make Applicative
+    - apply with map, prod, (evalPair)
+    - pure with map, unit
 
-Base set Monad: bind, pure, map
+Base set Monad: bind, pure
   - Make Monad join with bind
   - Make Applicative apply with bind & pure
+  - Make Functor map with bind & pure
 
 Base set Monad: join, pure, map
-  -  Make Monad bind with join & map
-  -  Make Applicative apply with join & map
+  - Make Monad bind with join & map
+  - Make Applicative apply with join & map
 -}
 
 --------------------------
@@ -152,6 +153,10 @@ map3 a2b2c2d fa fb fc = a2b2c2d <$> fa <*> fb <*> fc
 --------------------------
 -- To Monad, from only bind, pure
 --------------------------
+{- map from bind & pure -}
+map_ : Monad f => (a -> b) -> f a -> f b
+map_ a2b fa = bind fa (pure . a2b)
+
 {- join from bind -}
 join_ : Monad f => f (f a) -> f a
 join_ ffa = bind ffa id
@@ -179,7 +184,7 @@ pure (a2b a) : f b
 -}
 
 --------------------------
--- To Monad, from only join, pure
+-- To Monad, from only join, pure, map
 --------------------------
 {- bind from join & map -}
 bind_ : Monad f => f a -> (a -> f b) -> f b
