@@ -5,21 +5,27 @@
 {-
 Which ones can be implemented in terms of the others?
 
-Functor: fmap
-Applicative: pure, apply, is Functor
-   - Make Monoidal unit with pure 
-   - Make Monoidal prod with apply, fmap, (pair)
-   - Make Applicative map2 with fmap, apply
-   - Make map2, map3 with apply & fmap
-Monoidal: unit, prod, is Functor
-   - Make Applicative apply with fmap, prod, (evalPair)
-   - Make Applicative pure with fmap, unit
-Monad: bind, is Applicative
-    - Make Monad join with bind
-    - Make Monad bind with join & map
-    - Make Applicative apply with join & map
-    - Make Applicative apply with bind & pure
- -}
+Base set Functor: map
+
+Base set Applicative: pure, apply, map
+   - Make Monoidal
+        - unit with pure 
+        - prod with apply, map, (pair)
+   - Make Applicative map2, map3 with map, apply
+
+Base set Monoidal: unit, prod, map
+   - Make Applicative
+      - apply with map, prod, (evalPair)
+      - pure with map, unit
+
+Base set Monad: bind, pure, map
+  - Make Monad join with bind
+  - Make Applicative apply with bind & pure
+
+Base set Monad: join, pure, map
+  -  Make Monad bind with join & map
+  -  Make Applicative apply with join & map
+-}
 
 --------------------------
 -- Functor
@@ -144,7 +150,7 @@ map3 a2b2c2d fa fb fc = a2b2c2d <$> fa <*> fb <*> fc
 --                    = apply (apply (map a2b2c2d fa) fb) fc
 
 --------------------------
--- From Monad
+-- To Monad, from only bind, pure
 --------------------------
 {- join from bind -}
 join_ : Monad f => f (f a) -> f a
@@ -172,17 +178,9 @@ Now we need to make `f b` from `a` and `a2b: a -> b`.
 pure (a2b a) : f b
 -}
 
-{- apply from join & map -}
-apply___ : Monad f => f (a -> b) -> f a -> f b
-apply___ fa2b fa = join (map (\a2b => map a2b fa) fa2b)
-{-
-                   map a2b fa        : f b
-           \a2b => map a2b fa        : (a -> b) -> f b
-      map (\a2b => map a2b fa)       : f (a -> b) -> f (f b)
-      map (\a2b => map a2b fa) fa2b  : f (f b)
-join (map (\a2b => map a2b fa) fa2b) : f b
--}
-
+--------------------------
+-- To Monad, from only join, pure
+--------------------------
 {- bind from join & map -}
 bind_ : Monad f => f a -> (a -> f b) -> f b
 bind_ fa a2fb = join (map a2fb fa)
@@ -193,13 +191,13 @@ map a2fb fa : f (f b)
 join (map a2fb fa) : f b
  -}
 
-{- bind from join, apply, & pure -}
-bind__ : Monad f => f a -> (a -> f b) -> f b
-bind__ fa a2fb = join $ apply (pure a2fb) fa
+{- apply from join & map -}
+apply___ : Monad f => f (a -> b) -> f a -> f b
+apply___ fa2b fa = join (map (\a2b => map a2b fa) fa2b)
 {-
-apply : f (A -> B) -> f A -> f B     Let A = a, B = f b
-apply : f (a -> f b) -> f a -> f (f b)
-apply (pure a2fb) : f a -> f (f b)
-apply (pure a2fb) fa : f (f b)
-join $ apply (pure a2fb) fa : f b
- -}
+                   map a2b fa        : f b
+           \a2b => map a2b fa        : (a -> b) -> f b
+      map (\a2b => map a2b fa)       : f (a -> b) -> f (f b)
+      map (\a2b => map a2b fa) fa2b  : f (f b)
+join (map (\a2b => map a2b fa) fa2b) : f b
+-}
