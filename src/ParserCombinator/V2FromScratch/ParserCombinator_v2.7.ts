@@ -3,23 +3,23 @@
 /* -------------------------------------------------------------------------- */
 
 class Parser<A> {
-    private constructor(
-        private readonly run: (loc: Location) => ParserResult<A>
+    protected constructor(
+        public readonly run: (location: Location) => ParserResult<A>
     ) { }
 
     runString(s: string): ParserResult<A> {
-        return this.run(new Location(s))
+        return this.run(new Location(s, 0))
     }
 
     /* ------------------------------- Primitives ------------------------------- */
 
     static string(s: string): Parser<string> {
-        return new Parser((loc) => {
-            const substring = loc.nextString()
+        return new Parser((location) => {
+            const substring = location.substring()
             if (substring.startsWith(s)) {
-                return ParserResult.success(new ParserSuccess(s, s.length))
+                return ParserResult.success(new ParserSuccess(s, location.advanceBy(s.length)))
             } else {
-                return ParserResult.failure(ParserFailure.create(`string: Expected '${s}' but got '${substring}'`, loc.nextIndex))
+                return ParserResult.failure(ParserFailure.create(`string: Expected '${s}' but got '${substring}'`, location.nextIndex))
             }
         })
     }
@@ -28,31 +28,31 @@ class Parser<A> {
 
     // and: Parser<A> -> Parser<B> -> Parser<[A, B]>    (Also Mononoid append)
     and<B>(pb: Parser<B>): Parser<[A, B]> {
-        return new Parser((loc) =>
-            this.run(loc)
+        return new Parser((location) =>
+            this.run(location)
                 .bindSuccess((a) =>
                     pb
-                        .run(loc.advanceBy(a))
+                        .run(a.location)
                         .mapSuccess((b) => a.append(b)))
                 .mapFailure((failure) =>
                     failure.prependingError({
                         message: 'and: Expected both parsers to succeed',
-                        nextIndex: loc.nextIndex
+                        nextIndex: location.nextIndex
                     }))
         )
     }
 
     // or: Parser<A> -> Parser<B> -> Parser<Either<A, B>>
     or<B>(pb: Parser<B>): Parser<Either<A, B>> {
-        return new Parser((loc) =>
-            this.run(loc)
+        return new Parser((location) =>
+            this.run(location)
                 .mapValue(Either.left<A, B>)
                 .bindFailure((failure1) =>
-                    pb.run(loc)
+                    pb.run(location)
                         .mapValue(Either.right<A, B>)
                         .mapFailure((failure2) =>
                             failure1
-                                .prependingError({ message: 'or: Expected either parser to succeed', nextIndex: loc.nextIndex })
+                                .prependingError({ message: 'or: Expected either parser to succeed', nextIndex: location.nextIndex })
                                 .appendingErrorsFrom(failure2))
                 ))
     }
@@ -64,17 +64,17 @@ class Parser<A> {
     }
 
     scope(message: string): Parser<A> {
-        return new Parser((loc) =>
-            this.run(loc)
+        return new Parser((location) =>
+            this.run(location)
                 .mapFailure((failure) =>
-                    failure.prependingError({ message, nextIndex: loc.nextIndex })
+                    failure.prependingError({ message, nextIndex: location.nextIndex })
                 ))
     }
 
     /* ------------------------------- Functor -------------------------------- */
 
     mapResult<B>(f: (a: ParserResult<A>) => ParserResult<B>): Parser<B> {
-        return new Parser((loc) => f(this.run(loc)))
+        return new Parser((location) => f(this.run(location)))
     }
 
     mapSuccess<B>(f: (a: ParserSuccess<A>) => ParserSuccess<B>): Parser<B> {
@@ -83,6 +83,23 @@ class Parser<A> {
 
     mapFailure(f: (a: ParserFailure) => ParserFailure): Parser<A> {
         return this.mapResult((result) => result.mapFailure((failure) => f(failure)))
+    }
+
+    /* --------------------------------- Attempt -------------------------------- */
+    attempt(): AttemptParser<A> {
+        return new AttemptParser(this)
+    }
+}
+
+class AttemptParser<A> extends Parser<A> {
+    constructor(parser: Parser<A>) {
+        super((location) => {
+            const result = parser.run(location)
+            return result.match({
+                success: (success) => ParserResult.success(success),
+                failure: (failure) => ParserResult.failure(failure)
+            })
+        })
     }
 }
 
@@ -93,14 +110,14 @@ class Parser<A> {
 class Location {
     constructor(
         private readonly targetString: string,
-        readonly nextIndex: number = 0
+        readonly nextIndex: number
     ) { }
 
-    advanceBy<A>(ps: ParserSuccess<A>): Location {
-        return new Location(this.targetString, this.nextIndex + ps.consumedCount)
+    advanceBy(count: number): Location {
+        return new Location(this.targetString, this.nextIndex + count)
     }
 
-    nextString(): string {
+    substring(): string {
         return this.targetString.slice(this.nextIndex)
     }
 }
@@ -135,7 +152,7 @@ class ParserResult<A> {
     // Functor
     // map: (A -> B) -> F A -> F B
     mapValue<B>(f: (a: A) => B): ParserResult<B> {
-        return this.mapSuccess((success) => new ParserSuccess(f(success.value), success.consumedCount))
+        return this.mapSuccess((success) => new ParserSuccess(f(success.value), success.location))
     }
 
     mapSuccess<B>(f: (a: ParserSuccess<A>) => ParserSuccess<B>): ParserResult<B> {
@@ -176,12 +193,12 @@ class ParserResult<A> {
 class ParserSuccess<A> {
     constructor(
         public readonly value: A,
-        public readonly consumedCount: number
+        public readonly location: Location 
     ) { }
 
     // Monoid append : F A -> F B -> F [A, B]
     append<B>(sb: ParserSuccess<B>): ParserSuccess<[A, B]> {
-        return new ParserSuccess([this.value, sb.value], this.consumedCount + sb.consumedCount)
+        return new ParserSuccess([this.value, sb.value], sb.location)
     }
 }
 
@@ -247,10 +264,11 @@ type TestOptions<A> = {
 }
 
 function assertSuccess<A>(
-    options: { success: ParserSuccess<A> } & TestOptions<A>
+    options: { successValue: A, nextIndex: number } & TestOptions<A>
 ) {
-    const { testName, parser, targetString, success } = options
-    assertParserResultsAreEqual(testName, targetString, parser.runString(targetString), ParserResult.success(success))
+    const { testName, parser, targetString, successValue, nextIndex } = options
+    const parserSuccess = ParserResult.success(new ParserSuccess(successValue, new Location(targetString, nextIndex)))
+    assertParserResultsAreEqual(testName, targetString, parser.runString(targetString), parserSuccess)
 }
 
 function assertFailure<A>(
@@ -305,7 +323,8 @@ export default function run() {
         testName: `Test Parser.str success: string("ab")`,
         parser: parserAB,
         targetString: "abc",
-        success: new ParserSuccess("ab", 2)
+        successValue: "ab",
+        nextIndex: 2
     })
 
     assertFailure({
@@ -321,7 +340,8 @@ export default function run() {
         testName: "Test Parser.and success: ('ab' && 'cd')",
         parser: parserABandCD,
         targetString: "abcd",
-        success: new ParserSuccess(["ab", "cd"], 4)
+        successValue: ["ab", "cd"],
+        nextIndex: 4
     })
 
     assertFailure({
@@ -349,7 +369,8 @@ export default function run() {
         testName: "Test nested Parser.and: ('ab' && 'cd') && ('ef' && 'gh')",
         parser: parserABandCD_and_EFandGH,
         targetString: "abcdefgh",
-        success: new ParserSuccess([["ab", "cd"], ["ef", "gh"]], 8)
+        successValue: [["ab", "cd"], ["ef", "gh"]],
+        nextIndex: 8
     })
 
     assertFailure({
@@ -397,14 +418,16 @@ export default function run() {
         testName: `Test Parser.or success right: GG || HH`,
         parser: parserGorH,
         targetString: "HH",
-        success: new ParserSuccess(Either.right("HH"), 2)
+        successValue: Either.right("HH"),
+        nextIndex: 2
     })
 
     assertSuccess({
         testName: `Test Parser.or success right: GG || HH`,
         parser: parserGorH,
         targetString: "GG",
-        success: new ParserSuccess(Either.left("GG"), 2)
+        successValue: Either.left("GG"),
+        nextIndex: 2
     })
 
     assertFailure({
@@ -441,7 +464,8 @@ export default function run() {
         testName: "Test nested and & or: (ab && (cd || ef)) || (gh || ij)",
         parser: parserNestedAndsOrs,
         targetString: "ij",
-        success: new ParserSuccess(Either.right(Either.right("ij")), 2)
+        successValue: Either.right(Either.right("ij")),
+        nextIndex: 2
     })
 
     assertFailure({
@@ -483,5 +507,15 @@ export default function run() {
             { message: "or: Expected either parser to succeed", nextIndex: 2 },
             { message: "string: Expected 'TT' but got 'MM'", nextIndex: 2 },
             { message: "string: Expected 'RR' but got 'MM'", nextIndex: 2 }]
+    })
+
+    assertSuccess({
+        testName: "Test attempt: AA && BB",
+        parser: Parser.string("AA")
+            .and(Parser.string("BB").attempt())
+            .and(Parser.string("CC")),
+        targetString: "AACC",
+        successValue: ["AA", ["BB", "CC"]],
+        nextIndex: 4
     })
 }
