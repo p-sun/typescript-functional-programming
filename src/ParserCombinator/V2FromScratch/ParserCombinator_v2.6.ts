@@ -460,23 +460,28 @@ export default function run() {
     })
 
     assertFailure({
-        testName: `Test label: TT || RR`,
-        parser: Parser.string("AA").and(Parser.string("TT").or(Parser.string("RR")).label("label: TT or RR failed")),
+        testName: `Test label: AA && (TT || RR)`,
+        parser: Parser.string("AA")
+            .and(Parser.string("TT").or(Parser.string("RR"))
+            .label("label: TT or RR failed")
+        ),
         targetString: "AAMM",
         errors: [
-            { message: "", nextIndex: 0 },
-            { message: "", nextIndex: 2 }]
+            { message: "and: Expected both parsers to succeed", nextIndex: 0 },
+            { message: "label: TT or RR failed", nextIndex: 2 }]        
     })
 
     assertFailure({
-        testName: `Test label: TT || RR`,
-        parser: Parser.string("AA").and(Parser.string("TT").or(Parser.string("RR")).scope("label: TT or RR failed")),
+        testName: `Test label: AA && (TT || RR)`,
+        parser: Parser.string("AA")
+            .and(Parser.string("TT").or(Parser.string("RR")))
+            .scope("label: AND parser failed"),
         targetString: "AAMM",
         errors: [
-            { message: "", nextIndex: 0 },
-            { message: "", nextIndex: 2 },
-            { message: "", nextIndex: 2 },
-            { message: "", nextIndex: 2 },
-            { message: "", nextIndex: 2 }]
+            { message: "label: AND parser failed", nextIndex: 0 },
+            { message: "and: Expected both parsers to succeed", nextIndex: 0 },
+            { message: "or: Expected either parser to succeed", nextIndex: 2 },
+            { message: "string: Expected 'TT' but got 'MM'", nextIndex: 2 },
+            { message: "string: Expected 'RR' but got 'MM'", nextIndex: 2 }]
     })
 }
