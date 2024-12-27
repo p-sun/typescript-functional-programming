@@ -67,6 +67,16 @@ class Parser<A> {
         )
     }
 
+    optional(): Parser<Maybe<A>> {
+        return new Parser((location) =>
+            this.run(location)
+                .bind({
+                    success: (success) => ParserResult.success(new ParserSuccess(success.value, success.location)),
+                    failure: () => ParserResult.success(new ParserSuccess(undefined, location))
+                })
+        )
+    }
+
     /* ------------------------- Error Message Handling ------------------------- */
 
     label(message: string): Parser<A> {
@@ -89,6 +99,10 @@ class Parser<A> {
 
     mapFailure(f: (a: ParserFailure) => ParserFailure): Parser<A> {
         return this.mapResult((result) => result.mapFailure((failure) => f(failure)))
+    }
+
+    mapFailureToResult<B>(f: (a: ParserFailure) => ParserResult<B>): Parser<B> {
+        return this.mapResult((result) => result.bindFailure(f))
     }
 
     mapSuccess<B>(f: (a: ParserSuccess<A>) => ParserResult<B>): Parser<B> {
@@ -181,19 +195,18 @@ class ParserResult<A> {
 
     // Monad
     // bind: (A -> F B) -> F A -> F B
+    bind<B>(options: {
+        success: (a: ParserSuccess<A>) => ParserResult<B>,
+        failure: (a: ParserFailure) => ParserResult<B>
+    }): ParserResult<B> {
+        return this.data.isSuccessful ? options.success(this.data.success) : options.failure(this.data.failure)
+    }
+
     bindSuccess<B>(f: (a: ParserSuccess<A>) => ParserResult<B>): ParserResult<B> {
         if (this.data.isSuccessful) {
             return f(this.data.success)
         } else {
             return ParserResult.failure(this.data.failure)
-        }
-    }
-
-    bindFailure(f: (a: ParserFailure) => ParserResult<A>): ParserResult<A> {
-        if (this.data.isSuccessful) {
-            return this
-        } else {
-            return f(this.data.failure)
         }
     }
 
@@ -274,6 +287,12 @@ class Either<L, R> {
         return new Either<L, R>({ tag: 'right', value: r });
     }
 }
+
+/* -------------------------------------------------------------------------- */
+/*                                    Maybe                                   */
+/* -------------------------------------------------------------------------- */
+
+type Maybe<T> = T | undefined
 
 /* -------------------------------------------------------------------------- */
 /*                                  Test Utils                                */
@@ -534,5 +553,31 @@ export default function run() {
             { message: "or: Expected either parser to succeed", nextIndex: 0 },
             { message: "or: Expected either parser to succeed", nextIndex: 0 },
             { message: "Expected 'ij' but got 'abij'", nextIndex: 0 }]
+    })
+
+    const parserOptionalAA_and_BB = Parser.string("AA").optional().and(Parser.string("BB"))
+
+    assertSuccess({
+        testName: "Test optional: optional(AA) && BB",
+        parser: parserOptionalAA_and_BB,
+        targetString: "AABB",
+        successValue: ["AA", "BB"],
+        nextIndex: 4
+    })
+
+    assertSuccess({
+        testName: "Test optional: optional(AA) && BB",
+        parser: parserOptionalAA_and_BB,
+        targetString: "BB",
+        successValue: [undefined, "BB"],
+        nextIndex: 2
+    })
+
+    assertSuccess({
+        testName: "Test optional: AA && optional(BB)",
+        parser: Parser.string("AA").and(Parser.string("BB").optional()),
+        targetString: "AACC",
+        successValue: ["AA", undefined],
+        nextIndex: 2
     })
 }
