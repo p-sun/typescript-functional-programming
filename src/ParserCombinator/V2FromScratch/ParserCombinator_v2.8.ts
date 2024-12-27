@@ -68,13 +68,10 @@ class Parser<A> {
     }
 
     optional(): Parser<Maybe<A>> {
-        return new Parser((location) =>
-            this.run(location)
-                .bind({
-                    success: (success) => ParserResult.success(new ParserSuccess(success.value, success.location)),
-                    failure: () => ParserResult.success(new ParserSuccess(undefined, location))
-                })
-        )
+        return this.bind({
+            success: (success) => ParserResult.success(success),
+            failure: (_, prevLocation) => ParserResult.success(new ParserSuccess(undefined, prevLocation))
+        })
     }
 
     /* ------------------------- Error Message Handling ------------------------- */
@@ -101,15 +98,21 @@ class Parser<A> {
         return this.mapResult((result) => result.mapFailure((failure) => f(failure)))
     }
 
-    mapFailureToResult<B>(f: (a: ParserFailure) => ParserResult<B>): Parser<B> {
-        return this.mapResult((result) => result.bindFailure(f))
-    }
-
     mapSuccess<B>(f: (a: ParserSuccess<A>) => ParserResult<B>): Parser<B> {
         return this.mapResult((result) => result.bindSuccess(f))
     }
 
     /* ------------------------------- Monad -------------------------------- */
+
+    bind<B>(options: {
+        success: (a: ParserSuccess<A>, prevLocation: Location) => ParserResult<B>,
+        failure: (a: ParserFailure, prevLocation: Location) => ParserResult<B>
+    }): Parser<B> {
+        return new Parser((prevLocation) => this.run(prevLocation).bind({
+            success: (success) => options.success(success, prevLocation),
+            failure: (failure) => options.failure(failure, prevLocation)
+        }))
+    }
 
     bindSuccess<B>(f: (success: ParserSuccess<A>) => Parser<B>): Parser<[A, B]> {
         return this.mapSuccess((success1) =>
