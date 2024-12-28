@@ -22,10 +22,10 @@ class Parser<A> {
         return new Parser((location) => {
             const substring = location.substring()
             if (substring.startsWith(s)) {
-                return ParserResult.success(new ParserSuccess(s, location.advanceBy(s.length)))
+                return ParserResult.succeed(s, location.advanceBy(s.length))
             } else {
                 const errors = [{ message: `Expected '${s}' but got '${substring}'`, nextIndex: location.nextIndex }]
-                return ParserResult.failure(new ParserFailure({ errors, committed: true }))
+                return ParserResult.fail(new ParserFailure({ errors, committed: true, location }))
             }
         })
     }
@@ -36,17 +36,15 @@ class Parser<A> {
     and<B>(pb: Parser<B>): Parser<[A, B]> {
         return new Parser((location) =>
             this.run(location)
-                .bindSuccess((success1) =>
+                .bindSuccess((successA) =>
                     pb
-                        .run(success1.location)
-                        .mapSuccess((success2) => success1.append(success2)))
-                .mapFailure((failure) => {
-                    // failure can be uncommitted
-                    return failure.prependingError({
+                        .run(successA.location)
+                        .mapSuccessValue((b) => [successA.value, b] as [A, B]))
+                .mapFailureValue((failure) =>
+                    failure.prependingError({
                         message: 'and: Expected both parsers to succeed',
                         nextIndex: location.nextIndex
-                    })
-                })
+                    }))
         )
     }
 
@@ -54,11 +52,11 @@ class Parser<A> {
     or<B>(pb: Parser<B>): Parser<Either<A, B>> {
         return new Parser((location) =>
             this.run(location)
-                .mapValue(Either.left<A, B>)
+                .mapSuccessValue(Either.left<A, B>)
                 .bindFailureIfUncommitted(() =>
                     pb.run(location)
-                        .mapValue(Either.right<A, B>)
-                        .mapFailure((failure2) =>
+                        .mapSuccessValue(Either.right<A, B>)
+                        .mapFailureValue((failure2) =>
                             failure2.prependingError({
                                 message: 'or: Expected either parser to succeed',
                                 nextIndex: location.nextIndex
@@ -67,64 +65,71 @@ class Parser<A> {
         )
     }
 
+    /* --------------------------------- Attempt -------------------------------- */
+
+    attempt(): Parser<A> {
+        return this.mapFailureValue((failure) => failure.uncommit())
+    }
+
+    /* -------------------------------- Repeaters ------------------------------- */
+
     optional(): Parser<Maybe<A>> {
-        return this.bind({
-            success: (success) => ParserResult.success(success),
-            failure: (_, prevLocation) => ParserResult.success(new ParserSuccess(undefined, prevLocation))
-        })
+        return this
+            .mapSuccessValue(Maybe.just)
+            .mapFailure((failure) => ParserResult.succeed(Maybe.nothing(), failure.location))
+    }
+
+    /// Zero or more
+    many(): Parser<A[]> {
+        return this
+            .mapSuccess(successA =>
+                this.many().run(successA.location)
+                    .mapSuccessValue(acc => [successA.value, ...acc]))
+            .mapFailure((failure) => ParserResult.succeed([], failure.location))
     }
 
     /* ------------------------- Error Message Handling ------------------------- */
 
     label(message: string): Parser<A> {
-        return this.mapFailure((failure) => failure.label(message))
+        return this.mapFailureValue((failure) => failure.label(message))
     }
 
     scope(message: string): Parser<A> {
-        return new Parser((location) =>
-            this.run(location)
-                .mapFailure((failure) =>
-                    failure.prependingError({ message, nextIndex: location.nextIndex })
-                ))
-    }
-
-    /* ------------------------------- Functor -------------------------------- */
-
-    mapResult<B>(f: (a: ParserResult<A>) => ParserResult<B>): Parser<B> {
-        return new Parser((location) => f(this.run(location)))
-    }
-
-    mapFailure(f: (a: ParserFailure) => ParserFailure): Parser<A> {
-        return this.mapResult((result) => result.mapFailure((failure) => f(failure)))
-    }
-
-    mapSuccess<B>(f: (a: ParserSuccess<A>) => ParserResult<B>): Parser<B> {
-        return this.mapResult((result) => result.bindSuccess(f))
+        return this.mapFailureValue((failure) => failure.prependingError({ message, nextIndex: 0 }))
     }
 
     /* ------------------------------- Monad -------------------------------- */
 
-    bind<B>(options: {
-        success: (a: ParserSuccess<A>, prevLocation: Location) => ParserResult<B>,
-        failure: (a: ParserFailure, prevLocation: Location) => ParserResult<B>
-    }): Parser<B> {
-        return new Parser((prevLocation) => this.run(prevLocation).bind({
-            success: (success) => options.success(success, prevLocation),
-            failure: (failure) => options.failure(failure, prevLocation)
-        }))
+    // bind: F A -> (A -> F B) -> F B
+    private bindSuccess<B>(f: (success: ParserSuccess<A>) => Parser<B>): Parser<B> {
+        return this.mapSuccess((success) => f(success).run(success.location))
     }
 
-    bindSuccess<B>(f: (success: ParserSuccess<A>) => Parser<B>): Parser<[A, B]> {
-        return this.mapSuccess((success1) =>
-            f(success1)
-                .run(success1.location)
-                .bindSuccess((success2) => ParserResult.success(success1.append(success2))))
+    private bindFailure(f: (failure: ParserFailure) => Parser<A>): Parser<A> {
+        return this.mapFailure((failure) => f(failure).run(failure.location))
     }
 
-    /* --------------------------------- Attempt -------------------------------- */
+    /* ------------------------------- Functor -------------------------------- */
 
-    attempt(): Parser<A> {
-        return this.mapFailure((failure) => failure.uncommit())
+    private mapSuccessValue<B>(f: (a: A) => B): Parser<B> {
+        return this.mapResult((result) => result.mapSuccessValue(f))
+    }
+
+    private mapFailureValue(f: (a: ParserFailure) => ParserFailure): Parser<A> {
+        return this.mapResult((result) => result.mapFailureValue(f))
+    }
+
+    private mapSuccess<B>(f: (a: ParserSuccess<A>) => ParserResult<B>): Parser<B> {
+        return this.mapResult((result) => result.bindSuccess(f))
+    }
+
+    private mapFailure(f: (a: ParserFailure) => ParserResult<A>): Parser<A> {
+        return this.mapResult((result) => result.bindFailure(f))
+    }
+
+    // map : (A -> B) -> F A -> F B
+    private mapResult<B>(f: (a: ParserResult<A>) => ParserResult<B>): Parser<B> {
+        return new Parser((location) => f(this.run(location)))
     }
 }
 
@@ -152,16 +157,17 @@ class Location {
 /* -------------------------------------------------------------------------- */
 
 class ParserResult<A> {
-    private constructor(private readonly data:
+    private constructor(private readonly data: (
         | { isSuccessful: true, success: ParserSuccess<A> }
-        | { isSuccessful: false, failure: ParserFailure }) { }
+        | { isSuccessful: false, failure: ParserFailure })) { }
 
     // Pure
-    static success<T>(success: ParserSuccess<T>): ParserResult<T> {
-        return new ParserResult({ isSuccessful: true, success })
+
+    static succeed<T>(value: T, location: Location): ParserResult<T> {
+        return new ParserResult({ isSuccessful: true, success: { value, location } })
     }
 
-    static failure<T>(failure: ParserFailure): ParserResult<T> {
+    static fail<T>(failure: ParserFailure): ParserResult<T> {
         return new ParserResult({ isSuccessful: false, failure })
     }
 
@@ -176,28 +182,21 @@ class ParserResult<A> {
 
     // Functor
     // map: (A -> B) -> F A -> F B
-    mapValue<B>(f: (a: A) => B): ParserResult<B> {
-        return this.mapSuccess((success) => new ParserSuccess(f(success.value), success.location))
-    }
-
-    mapSuccess<B>(f: (a: ParserSuccess<A>) => ParserSuccess<B>): ParserResult<B> {
+    mapSuccessValue<B>(f: (a: A) => B): ParserResult<B> {
         if (this.data.isSuccessful) {
-            return ParserResult.success(f(this.data.success))
+            return ParserResult.succeed(f(this.data.success.value), this.data.success.location)
         } else {
-            return ParserResult.failure(this.data.failure)
+            return ParserResult.fail(this.data.failure)
         }
     }
 
-    mapFailure(f: (a: ParserFailure) => ParserFailure): ParserResult<A> {
-        if (this.data.isSuccessful) {
-            return this
-        } else {
-            return ParserResult.failure(f(this.data.failure))
-        }
+    mapFailureValue(f: (a: ParserFailure) => ParserFailure): ParserResult<A> {
+        return this.bindFailure((failure) => ParserResult.fail(f(failure)))
     }
 
     // Monad
-    // bind: (A -> F B) -> F A -> F B
+    
+    // Unused b/c bindSuccess & bindFailure are more ergonomic.
     bind<B>(options: {
         success: (a: ParserSuccess<A>) => ParserResult<B>,
         failure: (a: ParserFailure) => ParserResult<B>
@@ -205,11 +204,20 @@ class ParserResult<A> {
         return this.data.isSuccessful ? options.success(this.data.success) : options.failure(this.data.failure)
     }
 
+    // bind: (A -> F B) -> F A -> F B
     bindSuccess<B>(f: (a: ParserSuccess<A>) => ParserResult<B>): ParserResult<B> {
         if (this.data.isSuccessful) {
             return f(this.data.success)
         } else {
-            return ParserResult.failure(this.data.failure)
+            return ParserResult.fail(this.data.failure)
+        }
+    }
+
+    bindFailure(f: (a: ParserFailure) => ParserResult<A>): ParserResult<A> {
+        if (this.data.isSuccessful) {
+            return this
+        } else {
+            return f(this.data.failure)
         }
     }
 
@@ -220,31 +228,29 @@ class ParserResult<A> {
             return this
         }
     }
-}
 
-class ParserSuccess<A> {
-    constructor(
-        public readonly value: A,
-        public readonly location: Location
-    ) { }
-
+    // Combining
     // Monoid append : F A -> F B -> F [A, B]
-    append<B>(sb: ParserSuccess<B>): ParserSuccess<[A, B]> {
-        return new ParserSuccess([this.value, sb.value], sb.location)
+    append<B>(rb: ParserResult<B>): ParserResult<[A, B]> {
+        return this.bindSuccess((success) => rb.mapSuccessValue((b) => [success.value, b]))
     }
 }
+
+type ParserSuccess<A> = { value: A, location: Location }
 
 class ParserFailure {
     private readonly errors: ParserError[]
     public readonly committed: boolean
+    public readonly location: Location
 
-    constructor(data: { errors: ParserError[], committed: boolean }) {
+    constructor(data: { errors: ParserError[], committed: boolean, location: Location }) {
         this.errors = data.errors
         this.committed = data.committed
+        this.location = data.location
     }
 
     uncommit(): ParserFailure {
-        return new ParserFailure({ errors: this.errors, committed: false })
+        return new ParserFailure({ errors: this.errors, committed: false, location: this.location })
     }
 
     label(message: string): ParserFailure {
@@ -265,7 +271,7 @@ class ParserFailure {
     }
 
     private mapErrors(f: (error: ParserError[]) => ParserError[]): ParserFailure {
-        return new ParserFailure({ errors: f(this.errors), committed: this.committed })
+        return new ParserFailure({ errors: f(this.errors), committed: this.committed, location: this.location })
     }
 }
 
@@ -295,7 +301,17 @@ class Either<L, R> {
 /*                                    Maybe                                   */
 /* -------------------------------------------------------------------------- */
 
-type Maybe<T> = T | undefined
+class Maybe<A> {
+    private constructor(private data: { tag: 'just', value: A } | { tag: 'nothing' }) { }
+
+    static just<A>(a: A): Maybe<A> {
+        return new Maybe({ tag: 'just', value: a })
+    }
+
+    static nothing<A>(): Maybe<A> {
+        return new Maybe({ tag: 'nothing' })
+    }
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                  Test Utils                                */
@@ -311,7 +327,7 @@ function assertSuccess<A>(
     options: { successValue: A, nextIndex: number } & TestOptions<A>
 ) {
     const { testName, parser, targetString, successValue, nextIndex } = options
-    const parserSuccess = ParserResult.success(new ParserSuccess(successValue, new Location(targetString, nextIndex)))
+    const parserSuccess = ParserResult.succeed(successValue, new Location(targetString, nextIndex))
     assertParserResultsAreEqual(testName, targetString, parser.runString(targetString), parserSuccess)
 }
 
@@ -319,8 +335,8 @@ function assertFailure<A>(
     options: { errors: ParserError[] } & TestOptions<A>
 ) {
     const { testName, parser, targetString, errors } = options
-    const parserFailure = new ParserFailure({ errors, committed: false })
-    assertParserResultsAreEqual(testName, targetString, parser.runString(targetString), ParserResult.failure(parserFailure))
+    const parserFailure = new ParserFailure({ errors, committed: false, location: new Location(targetString, 0) })
+    assertParserResultsAreEqual(testName, targetString, parser.runString(targetString), ParserResult.fail(parserFailure))
 }
 
 function assertParserResultsAreEqual<A>(testname: string, targetString: string, actual: ParserResult<A>, expected: ParserResult<A>) {
@@ -476,7 +492,7 @@ export default function run() {
     })
 
     assertFailure({
-        testName: `Test label: AA && (TT || RR)`,
+        testName: `Test scope: AA && (TT || RR)`,
         parser: Parser.string("AA")
             .and(Parser.string("TT").or(Parser.string("RR")))
             .scope("label: AND parser failed"),
@@ -564,7 +580,7 @@ export default function run() {
         testName: "Test optional: optional(AA) && BB",
         parser: parserOptionalAA_and_BB,
         targetString: "AABB",
-        successValue: ["AA", "BB"],
+        successValue: [Maybe.just("AA"), "BB"],
         nextIndex: 4
     })
 
@@ -572,7 +588,7 @@ export default function run() {
         testName: "Test optional: optional(AA) && BB",
         parser: parserOptionalAA_and_BB,
         targetString: "BB",
-        successValue: [undefined, "BB"],
+        successValue: [Maybe.nothing(), "BB"],
         nextIndex: 2
     })
 
@@ -580,7 +596,25 @@ export default function run() {
         testName: "Test optional: AA && optional(BB)",
         parser: Parser.string("AA").and(Parser.string("BB").optional()),
         targetString: "AACC",
-        successValue: ["AA", undefined],
+        successValue: ["AA", Maybe.nothing()],
         nextIndex: 2
+    })
+
+    const parserZeroOrMoreAB = Parser.string("AB").many()
+
+    assertSuccess({
+        testName: "Test zero or more: many(AB)",
+        parser: parserZeroOrMoreAB,
+        targetString: "ABABAB??",
+        successValue: ["AB", "AB", "AB"],
+        nextIndex: 6
+    })
+
+    assertSuccess({
+        testName: "Test zero or more: many(AB)",
+        parser: parserZeroOrMoreAB,
+        targetString: "YY",
+        successValue: [],
+        nextIndex: 0
     })
 }
