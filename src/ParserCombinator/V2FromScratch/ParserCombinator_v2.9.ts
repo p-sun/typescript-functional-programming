@@ -32,7 +32,7 @@ class Parser<A> {
 
     /* ------------------------------- Combinators ------------------------------ */
 
-    // and: Parser<A> -> Parser<B> -> Parser<[A, B]>    (Also Mononoid append)
+    // and: F A -> F B -> F [A, B]    (Also Mononoid append)
     and<B>(pb: Parser<B>): Parser<[A, B]> {
         return new Parser((location) =>
             this.run(location)
@@ -48,7 +48,7 @@ class Parser<A> {
         )
     }
 
-    // or: Parser<A> -> Parser<B> -> Parser<Either<A, B>>
+    // or: F A -> F B -> F (Either A B)
     or<B>(pb: Parser<B>): Parser<Either<A, B>> {
         return new Parser((location) =>
             this.run(location)
@@ -71,23 +71,6 @@ class Parser<A> {
         return this.mapFailureValue((failure) => failure.uncommit())
     }
 
-    /* -------------------------------- Repeaters ------------------------------- */
-
-    optional(): Parser<Maybe<A>> {
-        return this
-            .mapSuccessValue(Maybe.just)
-            .mapFailure((failure) => ParserResult.succeed(Maybe.nothing(), failure.location))
-    }
-
-    /// Zero or more
-    many(): Parser<A[]> {
-        return this
-            .mapSuccess(successA =>
-                this.many().run(successA.location)
-                    .mapSuccessValue(acc => [successA.value, ...acc]))
-            .mapFailure((failure) => ParserResult.succeed([], failure.location))
-    }
-
     /* ------------------------- Error Message Handling ------------------------- */
 
     label(message: string): Parser<A> {
@@ -96,6 +79,32 @@ class Parser<A> {
 
     scope(message: string): Parser<A> {
         return this.mapFailureValue((failure) => failure.prependingError({ message, nextIndex: 0 }))
+    }
+
+    /* -------------------------------- Repeaters ------------------------------- */
+
+    optional(): Parser<Maybe<A>> {
+        return this
+            .mapSuccessValue(Maybe.just)
+            .mapFailure((failure) => ParserResult.succeed(Maybe.nothing(), failure.location))
+    }
+
+    many(): Parser<A[]> {  /// Zero or more
+        return this
+            // Equivalent to:
+            // .mapSuccess(successA =>
+            //     this.many().run(successA.location)
+            //         .mapSuccessValue(acc => [successA.value, ...acc]))
+            .map2(() => this.many(), (a, acc) => [a, ...acc])
+            .mapFailure((failure) => ParserResult.succeed([], failure.location))
+    }
+
+    private map2<B, C>(getParserB: () => Parser<B>, f: (a: A, b: B) => C): Parser<C> {
+        return this
+            .mapSuccess((successA) =>
+                getParserB()
+                    .run(successA.location)
+                    .mapSuccessValue((b) => f(successA.value, b)))
     }
 
     /* ------------------------------- Monad -------------------------------- */
