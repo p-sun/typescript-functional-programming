@@ -12,8 +12,8 @@ import runListADT from './src/FunctionalProgramming/5B_ListADT';
 import runADTMatchers from './src/FunctionalProgramming/5C0_GenericADT_Full';
 import runEvaluatorTests from './src/MathEvaluator/__tests/EvaluatorTests';
 import runParserCombinatorYouTube from './src/ParserCombinator/OtherImplementations/ParserEpisode4';
-import runParserCombinator from './src/ParserCombinator/ParserCombinator_v1';
-import runParserTests from './src/ParserCombinator/V2FromScratch/ParserCombinator_v2.9'
+import runParserCombinator from './src/ParserCombinator/OtherImplementations/ParserCombinator_v1';
+import runParserTests from './src/ParserCombinator/GreedyParser'
 
 // import runParser from './src/Idris Language/2024_12_5_4_HW'
 const Run = {

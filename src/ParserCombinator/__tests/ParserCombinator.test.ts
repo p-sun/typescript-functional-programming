@@ -8,7 +8,7 @@ import {
   str,
   repeatOnceOrMore_greedy,
   number,
-} from '../ParserCombinator_v1';
+} from '../OtherImplementations/ParserCombinator_v1';
 
 const w = str('w');
 const o = str('o');
