@@ -105,7 +105,30 @@ class Parser<A> {
         return this.and(this.many())
     }
 
+    /* ------------------------------- Applicative ------------------------------ */
+
+    // pure: A -> F A
+    private static succeed<T>(value: T): Parser<T> {
+        return new Parser((location) => ParserResult.succeed(value, location))
+    }
+
+    // apply: F (A -> B) -> F A -> F B
+    private apply<B>(pf: Parser<(a: A) => B>): Parser<B> {
+        return this.map2(() => pf, (a, a2b) => a2b(a))
+
+        // Make apply from bind & pure
+        // apply : Monad f => f (a -> b) -> f a -> f b
+        // apply fa2b fa = bind fa2b (\a2b => bind fa (\a => pure (a2b a)))
+        return pf
+            .bindSuccess((a2b) =>
+                this.bindSuccess((a) => Parser.succeed(a2b(a))))
+    }
+
     private map2<B, C>(getParserB: () => Parser<B>, f: (a: A, b: B) => C): Parser<C> {
+        return this
+            .bindSuccess((a) =>
+                getParserB().bindSuccess((b) => Parser.succeed(f(a, b))))
+
         return this
             .mapSuccess((successA) =>
                 getParserB()
@@ -116,8 +139,8 @@ class Parser<A> {
     /* ------------------------------- Monad -------------------------------- */
 
     // bind: F A -> (A -> F B) -> F B
-    private bindSuccess<B>(f: (success: ParserSuccess<A>) => Parser<B>): Parser<B> {
-        return this.mapSuccess((success) => f(success).run(success.location))
+    private bindSuccess<B>(f: (a: A) => Parser<B>): Parser<B> {
+        return this.mapSuccess((success) => f(success.value).run(success.location))
     }
 
     private bindFailure(f: (failure: ParserFailure) => Parser<A>): Parser<A> {

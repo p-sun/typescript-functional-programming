@@ -80,6 +80,14 @@ infixl 1 >>=
 (>>=) = bind
 
 --------------------------
+-- List as Monad Example
+--------------------------
+%hide listBind
+listBind : List a -> (a -> List b) -> List b
+listBind [] _ = []
+listBind (x :: xs) a2fb = a2fb x ++ (listBind xs a2fb)
+
+--------------------------
 -- Applicative & Monoidal are Isomorphic
 --------------------------
 
@@ -156,6 +164,7 @@ map3 a2b2c2d fa fb fc = a2b2c2d <$> fa <*> fb <*> fc
 {- map from bind & pure -}
 map_ : Monad f => (a -> b) -> f a -> f b
 map_ a2b fa = bind fa (pure . a2b)
+-- pure . a2b : a -> f b
 
 {- join from bind -}
 join_ : Monad f => f (f a) -> f a
