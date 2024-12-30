@@ -81,6 +81,11 @@ class Parser<A> {
         return this.mapFailureValue((failure) => failure.prependingError({ message, nextIndex: 0 }))
     }
 
+    validate(predicate: (a: A) => boolean, getMessage: (a: A) => string): Parser<A> {
+        return this.bindSuccess((a) =>
+            predicate(a) ? Parser.succeed(a) : Parser.fail(getMessage(a)))
+    }
+
     /* -------------------------------- Repeaters ------------------------------- */
 
     optional(): Parser<Maybe<A>> {
@@ -120,6 +125,14 @@ class Parser<A> {
     // pure: A -> F A
     private static succeed<T>(value: T): Parser<T> {
         return new Parser((location) => ParserResult.succeed(value, location))
+    }
+
+    private static fail<T>(message: string): Parser<T> {
+        return new Parser((location) => ParserResult.fail(
+            new ParserFailure({
+                errors: [{ message, nextIndex: location.nextIndex }],
+                committed: true, location
+            })))
     }
 
     // apply: F (A -> B) -> F A -> F B
@@ -676,5 +689,24 @@ export default function run() {
         targetString: "GGG",
         successValue: [],
         nextIndex: 0
+    })
+
+    const isNumber = (s: string) => !isNaN(parseInt(s))
+
+    assertSuccess({
+        testName: "Test validate: validate(888, isEven)",
+        parser: Parser.string("888").validate(
+            isNumber, (s) => `'${s}' is not a number`),
+        targetString: "888",
+        successValue: "888",
+        nextIndex: 3
+    })
+
+    assertFailure({
+        testName: "Test validate: validate(NotNum, isEven)",
+        parser: Parser.string("NotNum").validate(
+            isNumber, (s) => `'${s}' is not a number`),
+        targetString: "NotNum",
+        errors: [{ message: "'NotNum' is not a number", nextIndex: 6 }]
     })
 }
