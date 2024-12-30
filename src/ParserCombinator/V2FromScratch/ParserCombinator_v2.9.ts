@@ -32,7 +32,7 @@ class Parser<A> {
 
     /* ------------------------------- Combinators ------------------------------ */
 
-    // and: F A -> F B -> F [A, B]    (Also Mononoid append)
+    // and: F A -> F B -> F [A, B]    (i.e. Monoidal product)
     and<B>(pb: Parser<B>): Parser<[A, B]> {
         return new Parser((location) =>
             this.run(location)
@@ -89,6 +89,10 @@ class Parser<A> {
             .mapFailure((failure) => ParserResult.succeed(Maybe.nothing(), failure.location))
     }
 
+    oneOrMore(): Parser<[A, A[]]> {
+        return this.and(this.many())
+    }
+
     many(): Parser<A[]> {  /// Zero or more
         return this
             .map2(() => this.many(), (a, acc) => [a, ...acc])
@@ -101,8 +105,14 @@ class Parser<A> {
             .mapFailure((failure) => ParserResult.succeed([], failure.location))
     }
 
-    oneOrMore(): Parser<[A, A[]]> {
-        return this.and(this.many())
+    nMany(n: number): Parser<A[]> {
+        if (n === 0) {
+            return Parser.succeed([])
+        } else {
+            return this
+                .and(this.nMany(n - 1))
+                .mapSuccessValue(([a, acc]) => [a, ...acc])
+        }
     }
 
     /* ------------------------------- Applicative ------------------------------ */
@@ -124,6 +134,7 @@ class Parser<A> {
                 this.bindSuccess((a) => Parser.succeed(a2b(a))))
     }
 
+    // map2: F A -> F B -> (A -> B -> C) -> F C
     private map2<B, C>(getParserB: () => Parser<B>, f: (a: A, b: B) => C): Parser<C> {
         return this
             .bindSuccess((a) =>
@@ -268,7 +279,7 @@ class ParserResult<A> {
     }
 
     // Combining
-    // Monoid append : F A -> F B -> F [A, B]
+    // Monoidal product : F A -> F B -> F [A, B]
     append<B>(rb: ParserResult<B>): ParserResult<[A, B]> {
         return this.bindSuccess((success) => rb.mapSuccessValue((b) => [success.value, b]))
     }
@@ -649,5 +660,21 @@ export default function run() {
         targetString: "CD",
         successValue: ["CD", []],
         nextIndex: 2
+    })
+
+    assertSuccess({
+        testName: "Test nMany: nMany(3, EF)",
+        parser: Parser.string("EF").nMany(3),
+        targetString: "EFEFEF??",
+        successValue: ["EF", "EF", "EF"],
+        nextIndex: 6
+    })
+
+    assertSuccess({
+        testName: "Test nMany: nMany(0, EF)",
+        parser: Parser.string("EF").nMany(0),
+        targetString: "GGG",
+        successValue: [],
+        nextIndex: 0
     })
 }
