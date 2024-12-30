@@ -1,8 +1,10 @@
 /*
-This Parser is greedy by default. i.e. The only time the parser can backtrack is
-with `parserA.attempt().or(parserB)`. If parserA fails, the Parser's state
-is rewinded back to before parserA consumed.
- */
+This is a greedy parser. This means it assumes that a successful parse
+will always advance the nextIndex, unless the parser is wrapped in `attempt()`.
+
+i.e. The only time the parser can backtrack is with `parserA.attempt().or(parserB)`.
+If parserA fails, the Parser's state is rewinded back to before parserA consumed.
+*/
 
 /* -------------------------------------------------------------------------- */
 /*                                   Parser                                   */
@@ -14,6 +16,21 @@ class Parser<A> {
 
     runString(s: string): ParserResult<A> {
         return this.run(new Location(s, 0))
+    }
+
+    /* ---------------------------- Applicative Pure ---------------------------- */
+
+    // pure: A -> F A
+    private static succeed<T>(value: T): Parser<T> {
+        return new Parser((location) => ParserResult.succeed(value, location))
+    }
+
+    private static fail<T>(message: string): Parser<T> {
+        return new Parser((location) => ParserResult.fail(
+            new ParserFailure({
+                errors: [{ message, nextIndex: location.nextIndex }],
+                committed: true, location
+            })))
     }
 
     /* ------------------------------- Primitives ------------------------------- */
@@ -120,20 +137,7 @@ class Parser<A> {
         }
     }
 
-    /* ------------------------------- Applicative ------------------------------ */
-
-    // pure: A -> F A
-    private static succeed<T>(value: T): Parser<T> {
-        return new Parser((location) => ParserResult.succeed(value, location))
-    }
-
-    private static fail<T>(message: string): Parser<T> {
-        return new Parser((location) => ParserResult.fail(
-            new ParserFailure({
-                errors: [{ message, nextIndex: location.nextIndex }],
-                committed: true, location
-            })))
-    }
+    /* ---------------------------- Applicative Apply --------------------------- */
 
     // apply: F (A -> B) -> F A -> F B
     private apply<B>(pf: Parser<(a: A) => B>): Parser<B> {
@@ -223,7 +227,7 @@ class ParserResult<A> {
         | { isSuccessful: true, success: ParserSuccess<A> }
         | { isSuccessful: false, failure: ParserFailure })) { }
 
-    // Pure
+    /* -------------------------- Applicative/Monoidal -------------------------- */
 
     static succeed<T>(value: T, location: Location): ParserResult<T> {
         return new ParserResult({ isSuccessful: true, success: { value, location } })
@@ -233,33 +237,27 @@ class ParserResult<A> {
         return new ParserResult({ isSuccessful: false, failure })
     }
 
-    // All ADTs have a match method
-    match<B>(matchers: { success: (a: ParserSuccess<A>) => B, failure: (failure: ParserFailure) => B }): B {
-        if (this.data.isSuccessful) {
-            return matchers.success(this.data.success)
-        } else {
-            return matchers.failure(this.data.failure)
-        }
+    // Monoidal product : F A -> F B -> F [A, B]
+    append<B>(rb: ParserResult<B>): ParserResult<[A, B]> {
+        return this.bindSuccess((success) => rb.mapSuccessValue((b) => [success.value, b]))
     }
 
-    // Functor
+    /* --------------------------------- Functor -------------------------------- */
+
     // map: (A -> B) -> F A -> F B
     mapSuccessValue<B>(f: (a: A) => B): ParserResult<B> {
-        if (this.data.isSuccessful) {
-            return ParserResult.succeed(f(this.data.success.value), this.data.success.location)
-        } else {
-            return ParserResult.fail(this.data.failure)
-        }
+        return this.bindSuccess((success) => ParserResult.succeed(f(success.value), success.location))
     }
 
     mapFailureValue(f: (a: ParserFailure) => ParserFailure): ParserResult<A> {
         return this.bindFailure((failure) => ParserResult.fail(f(failure)))
     }
 
-    // Monad
+    /* ---------------------------------- Monad --------------------------------- */
 
-    // Unused b/c bindSuccess & bindFailure are more ergonomic.
-    bind<B>(options: {
+    // Unused b/c bindSuccess & bindFailure are more ergonomic. Note bindFailure is named 
+    // so to mirror bindSuccess, but it is not an Monad 'bind' because it doesn't return `F B`.
+    private bind<B>(options: {
         success: (a: ParserSuccess<A>) => ParserResult<B>,
         failure: (a: ParserFailure) => ParserResult<B>
     }): ParserResult<B> {
@@ -289,12 +287,6 @@ class ParserResult<A> {
         } else {
             return this
         }
-    }
-
-    // Combining
-    // Monoidal product : F A -> F B -> F [A, B]
-    append<B>(rb: ParserResult<B>): ParserResult<[A, B]> {
-        return this.bindSuccess((success) => rb.mapSuccessValue((b) => [success.value, b]))
     }
 }
 
@@ -343,6 +335,7 @@ type ParserError = { message: string, nextIndex: number }
 /*                                   Either                                   */
 /* -------------------------------------------------------------------------- */
 
+// Bifunctor
 class Either<L, R> {
     private constructor(
         private readonly data:
@@ -356,6 +349,25 @@ class Either<L, R> {
 
     static right<L, R>(r: R): Either<L, R> {
         return new Either<L, R>({ tag: 'right', value: r });
+    }
+
+    /* --------------------- Unused Useful Bifunctor methods --------------------- */
+
+    // All ADTs have a match method.
+    private match<T>(matchers: { left: (l: L) => T, right: (r: R) => T }): T {
+        return this.data.tag === 'left' ? matchers.left(this.data.value) : matchers.right(this.data.value)
+    }
+
+    // "map" preserves structure. "match" doesn't preserve structure.
+    private bimap<P, Q>(f: (l: L) => P, g: (r: R) => Q): Either<P, Q> {
+        return this.match({
+            left: (l) => Either.left(f(l)),
+            right: (r) => Either.right(g(r))
+        })
+    }
+
+    private unwrap(): L | R {
+        return this.match<L | R>({ left: (l) => l, right: (r) => r })
     }
 }
 

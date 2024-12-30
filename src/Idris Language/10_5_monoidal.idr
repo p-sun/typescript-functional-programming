@@ -72,9 +72,10 @@ unit_ = pure ()
 prod_ : {f: Type -> Type} -> Applicative f => f a -> f b -> f (a, b)
 prod_ fa fb = fmap (,) fa <*> fb
   -- (,) : A -> B -> (A, B)
+  -- fmap : (a -> b) -> f a -> f b      
+  -- fmap (,) : F A -> F (B -> (A, B))     -- make b = B -> (A, B), a = A
   -- pure (,) : F (A -> B -> (A, B))
   -- pure (,) <*> : F A -> F (B -> (A, B))
-  -- fmap (,)     : F A -> F (B -> (A, B))
   -- pure (,) <*> fa : F (B -> (A, B))
   -- pure (,) <*> fa <*> : F B -> F (A, B)
   -- pure (,) <*> fa <*> fb : F (A, B)

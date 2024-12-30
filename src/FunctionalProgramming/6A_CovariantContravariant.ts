@@ -36,6 +36,9 @@ const c1: CheckSubtype<Child, Parent> = 'subtype'
 /**
   Let the relation "isSubtype of" be denoted by `<`. 
 
+  "Covariant types preserves subtyping relationships."
+  X<Child> is subtype of X<Parent>, so X is covariant
+
   Covariant types have Child on the left of the `<` relation:
     Child < Parent
     (String => Child) < (String => Parent)
