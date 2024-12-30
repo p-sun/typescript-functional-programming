@@ -47,6 +47,19 @@ class Parser<A> {
         })
     }
 
+    static digit(): Parser<number> {
+        return new Parser((location) => {
+            const substring = location.substring()
+            const n = parseInt(substring.charAt(0))
+            if (!isNaN(n)) {
+                return ParserResult.succeed(n, location.advanceBy(1))
+            } else {
+                const errors = [{ message: `Expected a digit but got ${substring}`, nextIndex: location.nextIndex }]
+                return ParserResult.fail(new ParserFailure({ errors, committed: true, location }))
+            }
+        })
+    }
+
     /* ------------------------------- Combinators ------------------------------ */
 
     // and: F A -> F B -> F [A, B]    (i.e. Monoidal product)
@@ -80,6 +93,13 @@ class Parser<A> {
                             })
                         ))
         )
+    }
+
+    // Type narrowing A to Either<L, R> allows Parser<Either<L, R>> to be a Semigroup.
+    // There's no identity: F A, so it's not a Monoid.
+    // Semigroup append: F A -> F A -> F A
+    eitherOr<L, R>(this: Parser<Either<L, R>>, pb: Parser<Either<L, R>>): Parser<Either<L, R>> {
+        return this.or(pb).mapSuccessValue((either) => either.join())
     }
 
     /* --------------------------------- Attempt -------------------------------- */
@@ -177,7 +197,7 @@ class Parser<A> {
 
     /* ------------------------------- Functor -------------------------------- */
 
-    private mapSuccessValue<B>(f: (a: A) => B): Parser<B> {
+    mapSuccessValue<B>(f: (a: A) => B): Parser<B> {
         return this.mapResult((result) => result.mapSuccessValue(f))
     }
 
@@ -237,8 +257,8 @@ class ParserResult<A> {
         return new ParserResult({ isSuccessful: false, failure })
     }
 
-    // Monoidal product : F A -> F B -> F [A, B]
-    append<B>(rb: ParserResult<B>): ParserResult<[A, B]> {
+    // Monoidal product: F A -> F B -> F [A, B]
+    pair<B>(rb: ParserResult<B>): ParserResult<[A, B]> {
         return this.bindSuccess((success) => rb.mapSuccessValue((b) => [success.value, b]))
     }
 
@@ -349,6 +369,15 @@ class Either<L, R> {
 
     static right<L, R>(r: R): Either<L, R> {
         return new Either<L, R>({ tag: 'right', value: r });
+    }
+
+    /* ---------------------------------- Monad --------------------------------- */
+
+    join<L, R>(this: Either<Either<L, R>, Either<L, R>>): Either<L, R> {
+        return this.match({
+            left: (l) => l,
+            right: (r) => r
+        })
     }
 
     /* --------------------- Unused Useful Bifunctor methods --------------------- */
@@ -720,5 +749,37 @@ export default function run() {
             isNumber, (s) => `'${s}' is not a number`),
         targetString: "NotNum",
         errors: [{ message: "'NotNum' is not a number", nextIndex: 6 }]
+    })
+
+    assertSuccess({
+        testName: `Test digit: digit("123")`,
+        parser: Parser.digit().many(),
+        targetString: "123",
+        successValue: [1, 2, 3],
+        nextIndex: 3
+    })
+
+    const parserEitherOr =
+        Parser.string("E")
+            .mapSuccessValue<Either<string, number>>(Either.left).attempt()
+            .eitherOr(
+                Parser.digit()
+                    .mapSuccessValue<Either<string, number>>(Either.right)
+            )
+
+    assertSuccess({
+        testName: "Test eitherOr: attempt(left(E)) || right(digit())",
+        parser: parserEitherOr,
+        targetString: "3",
+        successValue: Either.right(3),
+        nextIndex: 1
+    })
+
+    assertSuccess({
+        testName: "Test eitherOr: left(E) || right(digit())",
+        parser: parserEitherOr,
+        targetString: "E",
+        successValue: Either.left("E"),
+        nextIndex: 1
     })
 }
