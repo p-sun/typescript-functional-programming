@@ -91,12 +91,18 @@ class Parser<A> {
 
     many(): Parser<A[]> {  /// Zero or more
         return this
-            // Equivalent to:
-            // .mapSuccess(successA =>
-            //     this.many().run(successA.location)
-            //         .mapSuccessValue(acc => [successA.value, ...acc]))
             .map2(() => this.many(), (a, acc) => [a, ...acc])
             .mapFailure((failure) => ParserResult.succeed([], failure.location))
+
+        return this
+            .mapSuccess(successA =>
+                this.many().run(successA.location)
+                    .mapSuccessValue(acc => [successA.value, ...acc]))
+            .mapFailure((failure) => ParserResult.succeed([], failure.location))
+    }
+
+    oneOrMore(): Parser<[A, A[]]> {
+        return this.and(this.many())
     }
 
     private map2<B, C>(getParserB: () => Parser<B>, f: (a: A, b: B) => C): Parser<C> {
@@ -602,5 +608,23 @@ export default function run() {
         targetString: "YY",
         successValue: [],
         nextIndex: 0
+    })
+
+    const parserOneOrMoreCD = Parser.string("CD").oneOrMore()
+
+    assertSuccess({
+        testName: "Test one or more: oneOrMore(CD)",
+        parser: parserOneOrMoreCD,
+        targetString: "CDCDCDCD????",
+        successValue: ["CD", ["CD", "CD", "CD"]],
+        nextIndex: 8
+    })
+
+    assertSuccess({
+        testName: "Test one or more: oneOrMore(CD)",
+        parser: parserOneOrMoreCD,
+        targetString: "CD",
+        successValue: ["CD", []],
+        nextIndex: 2
     })
 }
