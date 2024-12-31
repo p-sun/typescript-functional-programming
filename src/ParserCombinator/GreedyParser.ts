@@ -95,12 +95,6 @@ class Parser<A> {
         )
     }
 
-    // Type narrowing allows Parser<(string | number)> to be a Semigroup.
-    // Semigroup append: A -> A -> A
-    append<B>(pb: Parser<B>): Parser<Either<A, B>> {
-        return this.or(pb)
-    }
-
     /* --------------------------------- Attempt -------------------------------- */
 
     attempt(): Parser<A> {
@@ -216,6 +210,20 @@ class Parser<A> {
     private mapResult<B>(f: (a: ParserResult<A>) => ParserResult<B>): Parser<B> {
         return new Parser((location) => f(this.run(location)))
     }
+
+    /* --------------------------------- Monoid --------------------------------- */
+
+    // Reference of how Parser can be a Monoid, though this isn't useful in this Parser.
+    // Type narrowing allows Parser<(string | number)> to be a Semigroup.
+    // Semigroup append: A -> A -> A
+    orGeneric(pb: Parser<A>): Parser<A> {
+        return this.or(pb).mapSuccessValue((either) => either.unwrap())
+    }
+
+    // Monoid mempty: () -> A
+    static identity<T>(): Parser<T> {
+        return Parser.fail<T>("No parser succeeded").attempt()
+    }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -245,6 +253,14 @@ class ParserResult<A> {
     private constructor(private readonly data: (
         | { isSuccessful: true, success: ParserSuccess<A> }
         | { isSuccessful: false, failure: ParserFailure })) { }
+
+    getValue(): A | undefined {
+        return this.data.isSuccessful ? this.data.success.value : undefined
+    }
+
+    getIsCommitted(): boolean {
+        return this.data.isSuccessful ? true : this.data.failure.committed
+    }
 
     /* -------------------------- Applicative/Monoidal -------------------------- */
 
@@ -759,21 +775,64 @@ export default function run() {
     })
 
     const parserAppend =
-        Parser.string("E").attempt().append(Parser.digit())
-
-    assertSuccess({
-        testName: "Test append: E || digit()",
-        parser: parserAppend,
-        targetString: "3",
-        successValue: Either.right<string, number>(3),
-        nextIndex: 1
-    })
+        Parser.string("E").mapSuccessValue<string | number>(s => s)
+            .attempt()
+            .orGeneric(
+                Parser.digit().mapSuccessValue<string | number>(s => s)
+            )
 
     assertSuccess({
         testName: "Test append: E || digit()",
         parser: parserAppend,
         targetString: "E",
-        successValue: Either.left<string, number>("E"),
+        successValue: "E",
         nextIndex: 1
     })
+
+    assertSuccess({
+        testName: "Test append: E || digit()",
+        parser: parserAppend,
+        targetString: "3",
+        successValue: 3,
+        nextIndex: 1
+    })
+
+    /* ----------------------- Prove Parser<X> is a Monoid ---------------------- */
+
+    // For any X, Parser<X> is a Monoid with orGeneric() and identity(), 
+    // if we consider all "fail committed" to be the same, and "fail uncommited" to be the same.
+    const x = Parser.string("x")
+    const identity = Parser.identity<string>()
+
+    const assertEqualResult = (result1: ParserResult<string>, result2: ParserResult<string>) => {
+        const passed = result1.getValue() === result2.getValue() && result1.getIsCommitted() === result2.getIsCommitted()
+        const color = passed ? '\x1b[32m%s\x1b[0m' : '\x1b[31m%s\x1b[0m'
+        console.log(color, passed ? "PASSED" : "FAILED",
+            `Value: ${result1.getValue()} | Committed: ${result1.getIsCommitted()}`)
+    }
+
+    // Prove Monoid identity laws: x + 0 = x, 0 + x = x
+    let expected = x.runString("x") // x committed
+    assertEqualResult(x.orGeneric(identity).runString("x"), expected) // x committed
+    assertEqualResult(identity.orGeneric(x).runString("x"), expected) // x committed
+
+    expected = x.runString("?") // fail on x, committed
+    assertEqualResult(x.orGeneric(identity).runString("?"), expected) // fail on x, committed
+    assertEqualResult(identity.orGeneric(x).runString("?"), expected) // fail on x, committed
+
+    expected = x.attempt().runString("?") // fail on x, uncommitted
+    assertEqualResult(x.attempt().orGeneric(identity).runString("?"), expected) // fail on identity, uncommitted
+    assertEqualResult(identity.orGeneric(x.attempt()).runString("?"), expected) // fail on x, uncommitted
+
+    // Prove Monoid associativity laws: (a + b) + c = a + (b + c)
+    // Assuming a, b, and c are attepted parsers, it always parses A, B, C
+    // in the that order. whichever succeeds first is the result, and fails uncommitted otherwise.
+    const a = Parser.string("A").attempt()
+    const b = Parser.string("B").attempt()
+    const c = Parser.string("C").attempt()
+    const leftHalf = a.orGeneric(b).orGeneric(c)
+    const rightHalf = a.orGeneric(b.orGeneric(c))
+    assertEqualResult(leftHalf.runString("A"), rightHalf.runString("A")) // A committed
+    assertEqualResult(leftHalf.runString("B"), rightHalf.runString("B")) // B committed
+    assertEqualResult(leftHalf.runString("C"), rightHalf.runString("C")) // C committed
 }

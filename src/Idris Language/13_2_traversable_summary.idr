@@ -90,7 +90,7 @@ traverseList a2fb (x :: xs) = (::) <$> a2fb x <*> traverseList a2fb xs
 sequence_ : Traversable t => Applicative f => t (f a) -> f (t a)
 sequence_ tfa = traverse id tfa
   
-traverse_ : Traversable t => Applicative f => Functor t => (a -> f b) -> t a -> f (t b)
+traverse_ : Traversable t => Functor t => Applicative f => (a -> f b) -> t a -> f (t b)
 traverse_ a2fb ta = sequence (map a2fb ta)
 -- map : (A -> B) -> List A -> List B
 -- map : (a -> f b) -> List a -> List (f b)     -- let A = a, B = f b
