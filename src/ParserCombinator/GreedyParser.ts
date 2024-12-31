@@ -1,9 +1,11 @@
 /*
-This is a greedy parser. This means it assumes that a successful parse
-will always advance the nextIndex, unless the parser is wrapped in `attempt()`.
+This is a parser that can run greedily or not with the isGreedy boolean.
 
-i.e. The only time the parser can backtrack is with `parserA.attempt().or(parserB)`.
-If parserA fails, the Parser's state is rewinded back to before parserA consumed.
+This means when it's greedy, it assumes that any parse will advance the index, unless it's wrapped in `attempt()`.
+i.e. `parserA.attempt()or(parserB)` will backtrack if parserA fails, to the index before parserA.
+
+When the parser is not greedy, it will always backtrack to the last successful parse, unless
+the parser is wrapped in `greedily()`. i.e. `parserA.or(parserB)` will backtrack if parserA fails.
 */
 
 /* -------------------------------------------------------------------------- */
@@ -11,11 +13,11 @@ If parserA fails, the Parser's state is rewinded back to before parserA consumed
 /* -------------------------------------------------------------------------- */
 class Parser<A> {
     protected constructor(
-        public readonly run: (location: Location) => ParserResult<A>
+        public readonly run: (location: Location) => ParserResult<A>,
     ) { }
 
-    runString(s: string): ParserResult<A> {
-        return this.run(new Location(s, 0))
+    runString(s: string, isGreedy: boolean = true): ParserResult<A> {
+        return this.run(new Location(s, 0, isGreedy))
     }
 
     /* ---------------------------- Applicative Pure ---------------------------- */
@@ -29,7 +31,7 @@ class Parser<A> {
         return new Parser((location) => ParserResult.fail(
             new ParserFailure({
                 errors: [{ message, nextIndex: location.nextIndex }],
-                committed: true, location
+                committed: location.isGreedy, location
             })))
     }
 
@@ -42,7 +44,7 @@ class Parser<A> {
                 return ParserResult.succeed(s, location.advanceBy(s.length))
             } else {
                 const errors = [{ message: `Expected '${s}' but got '${substring}'`, nextIndex: location.nextIndex }]
-                return ParserResult.fail(new ParserFailure({ errors, committed: true, location }))
+                return ParserResult.fail(new ParserFailure({ errors, committed: location.isGreedy, location }))
             }
         })
     }
@@ -55,7 +57,7 @@ class Parser<A> {
                 return ParserResult.succeed(n, location.advanceBy(1))
             } else {
                 const errors = [{ message: `Expected a digit but got ${substring}`, nextIndex: location.nextIndex }]
-                return ParserResult.fail(new ParserFailure({ errors, committed: true, location }))
+                return ParserResult.fail(new ParserFailure({ errors, committed: location.isGreedy, location }))
             }
         })
     }
@@ -99,6 +101,10 @@ class Parser<A> {
 
     attempt(): Parser<A> {
         return this.mapFailureValue((failure) => failure.uncommit())
+    }
+
+    greedily(): Parser<A> {
+        return this.mapFailureValue((failure) => failure.commit())
     }
 
     /* ------------------------- Error Message Handling ------------------------- */
@@ -233,11 +239,12 @@ class Parser<A> {
 class Location {
     constructor(
         private readonly targetString: string,
-        readonly nextIndex: number
+        readonly nextIndex: number,
+        readonly isGreedy: boolean
     ) { }
 
     advanceBy(count: number): Location {
-        return new Location(this.targetString, this.nextIndex + count)
+        return new Location(this.targetString, this.nextIndex + count, this.isGreedy)
     }
 
     substring(): string {
@@ -336,6 +343,10 @@ class ParserFailure {
         this.errors = data.errors
         this.committed = data.committed
         this.location = data.location
+    }
+
+    commit(): ParserFailure {
+        return new ParserFailure({ errors: this.errors, committed: true, location: this.location })
     }
 
     uncommit(): ParserFailure {
@@ -442,20 +453,20 @@ type TestOptions<A> = {
 }
 
 function assertSuccess<A>(
-    options: { successValue: A, nextIndex: number } & TestOptions<A>
+    options: { successValue: A, nextIndex: number, isGreedy?: boolean } & TestOptions<A>
 ) {
-    const { testName, parser, targetString, successValue, nextIndex } = options
-    const parserSuccess = ParserResult.succeed(successValue, new Location(targetString, nextIndex))
-    assertParserResultsAreEqual(testName, targetString, parser.runString(targetString), parserSuccess)
+    const { testName, parser, targetString, successValue, nextIndex, isGreedy = true } = options
+    const parserSuccess = ParserResult.succeed(successValue, new Location(targetString, nextIndex, isGreedy))
+    assertParserResultsAreEqual(testName, targetString, parser.runString(targetString, isGreedy), parserSuccess)
 }
 
 function assertFailure<A>(
-    options: { errors: ParserError[] } & TestOptions<A>
+    options: { errors: ParserError[], isGreedy?: boolean, committed?: boolean } & TestOptions<A>
 ) {
-    const { testName, parser, targetString, errors } = options
+    const { testName, parser, targetString, errors, isGreedy = true, committed = true } = options
     const nextIndex = errors.at(-1)?.nextIndex ?? 0
-    const parserFailure = new ParserFailure({ errors, committed: true, location: new Location(targetString, nextIndex) })
-    assertParserResultsAreEqual(testName, targetString, parser.runString(targetString), ParserResult.fail(parserFailure))
+    const parserFailure = new ParserFailure({ errors, committed, location: new Location(targetString, nextIndex, isGreedy) })
+    assertParserResultsAreEqual(testName, targetString, parser.runString(targetString, isGreedy), ParserResult.fail(parserFailure))
 }
 
 function assertParserResultsAreEqual<A>(testname: string, targetString: string, actual: ParserResult<A>, expected: ParserResult<A>) {
@@ -515,7 +526,7 @@ export default function run() {
         targetString: "WW",
         errors: [
             { message: "and: Expected both parsers to succeed", nextIndex: 0 },
-            { message: "Expected 'ab' but got 'WW", nextIndex: 0 }]
+            { message: "Expected 'ab' but got 'WW'", nextIndex: 0 }]
     })
 
     const parserABandCD_and_EFandGH = Parser.string("ab").and(Parser.string("cd"))
@@ -795,6 +806,27 @@ export default function run() {
         targetString: "3",
         successValue: 3,
         nextIndex: 1
+    })
+
+    /* ------------------- greedily() (opposite of attempt()) ------------------- */
+
+    assertSuccess({
+        testName: "Test greedy: notGreedy(ab || cd)",
+        parser: Parser.string("ab").or(Parser.string("cd")),
+        targetString: "cd",
+        successValue: Either.right<string, string>("cd"),
+        nextIndex: 2,
+        isGreedy: false
+    })
+
+    assertFailure({
+        testName: "Test greedy: notGreedy(ab || cd)",
+        parser: Parser.string("ab").greedily().or(Parser.string("cd")),
+        targetString: "cd",
+        errors: [
+            { message: "Expected 'ab' but got 'cd'", nextIndex: 0 },
+        ],
+        isGreedy: false
     })
 
     /* ----------------------- Prove Parser<X> is a Monoid ---------------------- */
