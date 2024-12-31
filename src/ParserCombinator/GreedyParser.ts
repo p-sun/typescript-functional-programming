@@ -95,11 +95,10 @@ class Parser<A> {
         )
     }
 
-    // Type narrowing A to Either<L, R> allows Parser<Either<L, R>> to be a Semigroup.
-    // There's no identity: F A, so it's not a Monoid.
-    // Semigroup append: F A -> F A -> F A
-    eitherOr<L, R>(this: Parser<Either<L, R>>, pb: Parser<Either<L, R>>): Parser<Either<L, R>> {
-        return this.or(pb).mapSuccessValue((either) => either.join())
+    // Type narrowing allows Parser<(string | number)> to be a Semigroup.
+    // Semigroup append: A -> A -> A
+    append<B>(pb: Parser<B>): Parser<Either<A, B>> {
+        return this.or(pb)
     }
 
     /* --------------------------------- Attempt -------------------------------- */
@@ -373,7 +372,7 @@ class Either<L, R> {
 
     /* ---------------------------------- Monad --------------------------------- */
 
-    join<L, R>(this: Either<Either<L, R>, Either<L, R>>): Either<L, R> {
+    private join<L, R>(this: Either<Either<L, R>, Either<L, R>>): Either<L, R> {
         return this.match({
             left: (l) => l,
             right: (r) => r
@@ -395,7 +394,7 @@ class Either<L, R> {
         })
     }
 
-    private unwrap(): L | R {
+    unwrap(): L | R {
         return this.match<L | R>({ left: (l) => l, right: (r) => r })
     }
 }
@@ -759,27 +758,22 @@ export default function run() {
         nextIndex: 3
     })
 
-    const parserEitherOr =
-        Parser.string("E")
-            .mapSuccessValue<Either<string, number>>(Either.left).attempt()
-            .eitherOr(
-                Parser.digit()
-                    .mapSuccessValue<Either<string, number>>(Either.right)
-            )
+    const parserAppend =
+        Parser.string("E").attempt().append(Parser.digit())
 
     assertSuccess({
-        testName: "Test eitherOr: attempt(left(E)) || right(digit())",
-        parser: parserEitherOr,
+        testName: "Test append: E || digit()",
+        parser: parserAppend,
         targetString: "3",
-        successValue: Either.right(3),
+        successValue: Either.right<string, number>(3),
         nextIndex: 1
     })
 
     assertSuccess({
-        testName: "Test eitherOr: left(E) || right(digit())",
-        parser: parserEitherOr,
+        testName: "Test append: E || digit()",
+        parser: parserAppend,
         targetString: "E",
-        successValue: Either.left("E"),
+        successValue: Either.left<string, number>("E"),
         nextIndex: 1
     })
 }
